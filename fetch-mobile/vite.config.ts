@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
+      "@fetch/shared": path.resolve(__dirname, "../shared/src/index.ts"),
       "@": path.resolve(__dirname, "./src"),
     },
   },

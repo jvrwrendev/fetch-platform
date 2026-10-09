@@ -34,8 +34,8 @@ export default function TripCard({ booking }: { booking: Booking }) {
           <Badge variant={STATUS_VARIANT[booking.status] ?? "secondary"}>
             {booking.status.replace("_", " ")}
           </Badge>
-          {booking.fare > 0 && (
-            <span className="text-sm font-semibold">₱{booking.fare}</span>
+          {booking.fare.total > 0 && (
+            <span className="text-sm font-semibold">₱{booking.fare.total}</span>
           )}
         </div>
       </CardContent>

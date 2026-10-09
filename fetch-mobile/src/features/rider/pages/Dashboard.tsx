@@ -16,7 +16,7 @@ export default function RiderDashboard() {
 
   const mine = bookings.filter((b) => b.riderId === user?.id)
   const completed = mine.filter((b) => b.status === "completed")
-  const earnings = completed.reduce((s, b) => s + b.fare, 0)
+  const earnings = completed.reduce((s, b) => s + b.fare.total, 0)
   const active = bookings.find(
     (b) => b.riderId === user?.id && ["accepted", "arriving", "in_progress"].includes(b.status)
   )

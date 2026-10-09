@@ -160,7 +160,11 @@ export default function BookRide() {
       vehicle,
       pickup,
       dropoff,
-      fare: estimate.fare,
+      fare: {
+        base: estimate.base,
+        distance: estimate.distanceCost,
+        total: estimate.total,
+      },
       distanceKm: estimate.distanceKm,
     })
     toast.success("Ride requested — looking for a rider")
@@ -290,8 +294,32 @@ export default function BookRide() {
                     <span className="font-medium">{estimate.distanceKm} km</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Estimated fare</span>
-                    <span className="font-semibold">₱{estimate.fare}</span>
+                    <span className="text-muted-foreground">Base fare</span>
+                    <span className="font-medium">₱{estimate.base}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Distance fare</span>
+                    <span className="font-medium">₱{estimate.distanceCost}</span>
+                  </div>
+                  {estimate.surgeAdjustment > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Surge</span>
+                      <span className="font-medium">₱{estimate.surgeAdjustment}</span>
+                    </div>
+                  )}
+                  {estimate.minimumTopUp > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Minimum fare top-up</span>
+                      <span className="font-medium">₱{estimate.minimumTopUp}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Booking fee</span>
+                    <span className="font-medium">₱{estimate.bookingFee}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="font-medium">Estimated fare</span>
+                    <span className="font-semibold">₱{estimate.total}</span>
                   </div>
                 </div>
                 <div className="space-y-2">

@@ -38,7 +38,7 @@ export default function RiderTrip() {
         <CardContent className="space-y-3 text-sm">
           <p>{booking.pickup.name} → {booking.dropoff.name}</p>
           <p className="text-muted-foreground">Passenger: {booking.passengerName}</p>
-          <p className="font-semibold">₱{booking.fare}</p>
+          <p className="font-semibold">₱{booking.fare.total}</p>
           {next && (
             <Button onClick={() => setStatus(booking.id, next.status)}>{next.label}</Button>
           )}

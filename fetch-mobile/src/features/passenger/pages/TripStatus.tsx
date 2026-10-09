@@ -49,7 +49,9 @@ export default function TripStatusPage() {
               {VEHICLE_LABELS[booking.vehicle]} · {booking.distanceKm} km
             </p>
             {booking.riderName && <p>Rider: {booking.riderName}</p>}
-            {booking.fare > 0 && <p className="font-semibold">₱{booking.fare}</p>}
+            {booking.fare.total > 0 && (
+              <p className="font-semibold">₱{booking.fare.total}</p>
+            )}
           </div>
           {active && (
             <Button variant="destructive" onClick={() => cancelBooking(booking.id)}>

@@ -9,9 +9,16 @@ import {
 import { INITIAL_BOOKINGS } from "@/data/mock"
 import type { Booking, TripStatus } from "@/lib/types"
 
+type NewBookingInput = Omit<
+  Booking,
+  "id" | "reference" | "createdAt" | "status" | "paymentMethod"
+> & {
+  paymentMethod?: Booking["paymentMethod"]
+}
+
 interface BookingsContextValue {
   bookings: Booking[]
-  createBooking: (b: Omit<Booking, "id" | "createdAt" | "status">) => Booking
+  createBooking: (b: NewBookingInput) => Booking
   acceptBooking: (id: string, riderId: string, riderName: string) => void
   rejectBooking: (id: string) => void
   setStatus: (id: string, status: TripStatus) => void
@@ -19,7 +26,7 @@ interface BookingsContextValue {
 }
 
 const BookingsContext = createContext<BookingsContextValue | null>(null)
-const STORAGE_KEY = "fetch_bookings"
+const STORAGE_KEY = "fetch_bookings_v2"
 
 function load(): Booking[] {
   try {
@@ -33,23 +40,22 @@ function load(): Booking[] {
 export function BookingsProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>(load)
 
-  const createBooking = useCallback(
-    (b: Omit<Booking, "id" | "createdAt" | "status">) => {
-      const booking: Booking = {
-        ...b,
-        id: `b${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        status: "searching",
-      }
-      setBookings((prev) => {
-        const next = [booking, ...prev]
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-        return next
-      })
-      return booking
-    },
-    []
-  )
+  const createBooking = useCallback((b: NewBookingInput) => {
+    const booking: Booking = {
+      ...b,
+      paymentMethod: b.paymentMethod ?? "cash",
+      id: `b${Date.now()}`,
+      reference: `FT-${Date.now().toString().slice(-6)}`,
+      createdAt: new Date().toISOString(),
+      status: "searching",
+    }
+    setBookings((prev) => {
+      const next = [booking, ...prev]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+    return booking
+  }, [])
 
   const update = useCallback((id: string, patch: Partial<Booking>) => {
     setBookings((prev) => {

@@ -27,7 +27,7 @@ export default function Requests() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              {VEHICLE_LABELS[b.vehicle]} · {b.distanceKm} km · ₱{b.fare} · {b.passengerName}
+              {VEHICLE_LABELS[b.vehicle]} · {b.distanceKm} km · ₱{b.fare.total} · {b.passengerName}
             </p>
             <div className="flex gap-2">
               <Button

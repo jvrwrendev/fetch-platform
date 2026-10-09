@@ -1,0 +1,16 @@
+{
+  "name": "fetch-platform",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "shared",
+    "fetch-mobile",
+    "admin-frontend"
+  ],
+  "scripts": {
+    "dev:mobile": "npm run dev -w fetch-mobile",
+    "dev:admin": "npm run dev -w admin-frontend",
+    "build:mobile": "npm run build -w fetch-mobile",
+    "build:admin": "npm run build -w admin-frontend"
+  }
+}

@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = useCallback((patch: Partial<User>) => {
     setUser((prev) => {
       if (!prev) return prev
-      const next = { ...prev, ...patch }
+      const next = { ...prev, ...patch, id: prev.id, role: prev.role }
       void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next))
       return next
     })

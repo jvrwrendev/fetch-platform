@@ -36,7 +36,7 @@ export default function RiderProfile() {
   }
 
   return (
-    <Screen>
+    <Screen header>
       <PageHeader title="Rider profile" />
 
       <Card>

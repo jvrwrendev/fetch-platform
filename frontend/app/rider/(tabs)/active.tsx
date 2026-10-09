@@ -23,7 +23,7 @@ export default function RiderActive() {
 
   if (!active) {
     return (
-      <Screen>
+      <Screen header>
         <PageHeader title="Active trip" />
         <View className="items-center gap-3 rounded-xl border border-border bg-card p-8">
           <Navigation size={22} color="#737373" />

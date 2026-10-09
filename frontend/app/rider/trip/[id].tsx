@@ -23,7 +23,7 @@ const NEXT: Record<
   string,
   { status: TripStatus; label: string } | undefined
 > = {
-  accepted: { status: "arriving", label: "I've arrived at pickup" },
+  accepted: { status: "arriving", label: "Arrived at pickup" },
   arriving: { status: "in_progress", label: "Start trip" },
   in_progress: { status: "completed", label: "Complete trip" },
 }
@@ -126,12 +126,14 @@ export default function RiderTrip() {
         >
           {next.label}
         </Button>
+      ) : booking.status === "completed" ? (
+        <Button variant="outline" onPress={() => router.replace("/rider")}>
+          Done
+        </Button>
       ) : (
         <View className="rounded-xl border border-border bg-card p-4">
           <Text className="text-sm text-muted-foreground">
-            {booking.status === "completed"
-              ? "This trip is complete."
-              : "This trip was cancelled."}
+            This trip was cancelled.
           </Text>
         </View>
       )}

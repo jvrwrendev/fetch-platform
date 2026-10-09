@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -21,7 +20,8 @@ import type { Role } from "@/shared"
 export default function Login() {
   const { login } = useAuth()
   const router = useRouter()
-  const [email, setEmail] = useState("alex@example.com")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
   const signIn = (role: Role) => {
     login(role)
@@ -29,24 +29,18 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="mx-auto w-full max-w-md flex-1 justify-center gap-6 px-6">
-        <View className="items-center gap-2">
-          <View className="size-12 items-center justify-center rounded-2xl bg-primary">
-            <Car size={24} color="#fafafa" />
-          </View>
-          <Text className="text-2xl font-bold tracking-tight">
-            Welcome to Fetch
-          </Text>
+    <SafeAreaView className="flex-1 bg-muted/30">
+      <View className="mx-auto w-full max-w-md flex-1 justify-center gap-6 px-4">
+        <View className="items-center gap-1">
+          <Text className="text-3xl font-bold tracking-tight">Fetch</Text>
           <Text className="text-center text-sm text-muted-foreground">
-            Pick a demo account to continue. No password needed in this build.
+            Sign in with a demo account to continue
           </Text>
         </View>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>Demo credentials are pre-filled.</CardDescription>
+            <CardTitle>Demo Login</CardTitle>
           </CardHeader>
           <CardContent>
             <View className="gap-2">
@@ -54,31 +48,44 @@ export default function Login() {
               <Input
                 value={email}
                 onChangeText={setEmail}
+                placeholder="you@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
             </View>
             <View className="gap-2">
               <Label>Password</Label>
-              <Input value="demo1234" secureTextEntry editable={false} />
+              <Input
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry
+              />
             </View>
-            <View className="gap-3 pt-1">
-              <Button onPress={() => signIn("passenger")}>
+            <Text className="text-xs text-muted-foreground">
+              Any credentials work — pick your role:
+            </Text>
+            <View className="flex-row gap-3">
+              <Button className="flex-1" onPress={() => signIn("passenger")}>
                 <Navigation size={16} color="#fafafa" />
                 <Text className="text-sm font-medium text-primary-foreground">
-                  Continue as passenger
+                  Passenger
                 </Text>
               </Button>
-              <Button variant="outline" onPress={() => signIn("rider")}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onPress={() => signIn("rider")}
+              >
                 <Car size={16} color="#171717" />
-                <Text className="text-sm font-medium">Continue as rider</Text>
+                <Text className="text-sm font-medium">Rider</Text>
               </Button>
             </View>
           </CardContent>
         </Card>
 
-        <Button variant="ghost" onPress={() => router.back()}>
-          Back
+        <Button variant="ghost" onPress={() => router.replace("/")}>
+          Back to home
         </Button>
       </View>
     </SafeAreaView>

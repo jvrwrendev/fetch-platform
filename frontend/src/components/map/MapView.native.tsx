@@ -15,6 +15,8 @@ export default function MapView({
   route = [],
   height = 260,
   onMapClick,
+  markersDraggable = false,
+  onMarkerDragEnd,
   className,
 }: MapViewProps) {
   const region = regionOf(center, markers, route)
@@ -55,6 +57,16 @@ export default function MapView({
             coordinate={{ latitude: marker.lat, longitude: marker.lng }}
             title={marker.label}
             pinColor={marker.color ?? mapColors.rider}
+            draggable={markersDraggable}
+            onDragEnd={
+              markersDraggable && onMarkerDragEnd
+                ? (event) =>
+                    onMarkerDragEnd(index, {
+                      lat: event.nativeEvent.coordinate.latitude,
+                      lng: event.nativeEvent.coordinate.longitude,
+                    })
+                : undefined
+            }
           />
         ))}
       </RNMapView>

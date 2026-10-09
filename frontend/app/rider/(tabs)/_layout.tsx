@@ -31,7 +31,7 @@ export default function RiderTabs() {
       <Tabs.Screen
         name="active"
         options={{
-          title: "Active",
+          title: "Trip",
           tabBarIcon: ({ color, size }) => (
             <Navigation color={color} size={size} />
           ),
@@ -40,7 +40,7 @@ export default function RiderTabs() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: "Trips",
           tabBarIcon: ({ color, size }) => (
             <History color={color} size={size} />
           ),

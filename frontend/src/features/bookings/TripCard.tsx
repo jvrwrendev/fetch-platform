@@ -30,6 +30,11 @@ export default function TripCard({ booking }: { booking: Booking }) {
             {VEHICLE_LABELS[booking.vehicle]} · {booking.distanceKm} km ·{" "}
             {shortDate(booking.createdAt)}
           </Text>
+          {booking.riderName ? (
+            <Text className="text-xs text-muted-foreground">
+              Rider: {booking.riderName}
+            </Text>
+          ) : null}
           <Badge variant={STATUS_VARIANT[booking.status]} className="mt-1">
             {statusLabel(booking.status)}
           </Badge>

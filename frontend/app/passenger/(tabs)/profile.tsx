@@ -37,7 +37,7 @@ export default function PassengerProfile() {
   }
 
   return (
-    <Screen>
+    <Screen header>
       <PageHeader title="Profile" />
 
       <Card>

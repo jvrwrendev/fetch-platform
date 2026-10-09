@@ -1,24 +1,33 @@
 import type { ReactNode } from "react"
 import { ScrollView, View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { SafeAreaView, type Edge } from "react-native-safe-area-context"
 
+import { AppHeader } from "@/components/layout/AppHeader"
 import { Text } from "@/components/ui/text"
 
 export function Screen({
   children,
   scroll = true,
+  header = false,
 }: {
   children: ReactNode
   scroll?: boolean
+  /** Render the persistent Fetch bar (tab screens). Handles its own top inset. */
+  header?: boolean
 }) {
   const body = (
     <View className="mx-auto w-full max-w-2xl gap-5 p-4">{children}</View>
   )
+  const edges: Edge[] = header ? [] : ["top"]
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-muted/30">
+    <SafeAreaView edges={edges} className="flex-1 bg-muted/30">
+      {header ? <AppHeader /> : null}
       {scroll ? (
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
+        >
           {body}
         </ScrollView>
       ) : (

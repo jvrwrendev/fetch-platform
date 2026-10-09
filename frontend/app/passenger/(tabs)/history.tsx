@@ -18,7 +18,7 @@ export default function PassengerHistory() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   return (
-    <Screen>
+    <Screen header>
       <PageHeader title="Trip history" description={`${trips.length} trips`} />
 
       {trips.length === 0 ? (

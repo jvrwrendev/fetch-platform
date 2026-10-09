@@ -17,7 +17,7 @@ export default function RiderHistory() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   return (
-    <Screen>
+    <Screen header>
       <PageHeader title="Trip history" description={`${trips.length} trips`} />
       {trips.length === 0 ? (
         <View className="rounded-xl border border-border bg-card p-8">

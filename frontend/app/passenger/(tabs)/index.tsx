@@ -23,38 +23,59 @@ export default function PassengerHome() {
     .slice(0, 3)
 
   return (
-    <Screen>
+    <Screen header>
       <PageHeader
         title={`Hi, ${user?.name.split(" ")[0] ?? "there"}`}
-        description="Where would you like to go today?"
+        description="Where would you like to go?"
       />
 
-      <Button onPress={() => router.push("/passenger/book")}>
-        <Plus size={16} color="#fafafa" />
-        <Text className="text-sm font-medium text-primary-foreground">
-          Book a ride
-        </Text>
-      </Button>
+      <Card className="bg-primary">
+        <CardContent className="flex-row items-center justify-between gap-4 p-5 pt-5">
+          <View className="flex-1 gap-0.5">
+            <Text className="font-semibold text-primary-foreground">
+              Book a new ride
+            </Text>
+            <Text className="text-sm text-primary-foreground opacity-80">
+              Fast pickups across Metro Manila
+            </Text>
+          </View>
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => router.push("/passenger/book")}
+          >
+            <Plus size={16} color="#171717" />
+            <Text className="text-sm font-medium text-secondary-foreground">
+              Book
+            </Text>
+          </Button>
+        </CardContent>
+      </Card>
 
       {active ? (
-        <Pressable onPress={() => router.push(`/passenger/trip/${active.id}`)}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Trip in progress</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-row items-center justify-between gap-3">
-              <View className="flex-1 gap-1">
-                <Text className="text-sm font-medium" numberOfLines={1}>
-                  {active.pickup.name} → {active.dropoff.name}
-                </Text>
-                <Text className="text-xs capitalize text-muted-foreground">
-                  {active.status.replace(/_/g, " ")}
-                </Text>
-              </View>
-              <ArrowRight size={18} color="#171717" />
-            </CardContent>
-          </Card>
-        </Pressable>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Active trip</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-row items-center justify-between gap-3 pt-0">
+            <View className="flex-1 gap-1">
+              <Text className="text-sm font-medium" numberOfLines={1}>
+                {active.pickup.name} → {active.dropoff.name}
+              </Text>
+              <Text className="text-xs capitalize text-muted-foreground">
+                {active.status.replace(/_/g, " ")}
+              </Text>
+            </View>
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={() => router.push(`/passenger/trip/${active.id}`)}
+            >
+              <Text className="text-sm font-medium">View</Text>
+              <ArrowRight size={14} color="#171717" />
+            </Button>
+          </CardContent>
+        </Card>
       ) : null}
 
       <View className="gap-3">

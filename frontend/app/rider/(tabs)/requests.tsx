@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router"
 import { View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
@@ -9,19 +8,18 @@ import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useBookings } from "@/features/bookings/BookingsContext"
 import { VEHICLE_LABELS } from "@/shared"
-import { peso, shortDate } from "@/utils/format"
+import { peso } from "@/utils/format"
 
 export default function RiderRequests() {
   const { user } = useAuth()
   const { bookings, acceptBooking, rejectBooking } = useBookings()
-  const router = useRouter()
 
   const open = bookings
     .filter((booking) => booking.status === "searching")
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
   return (
-    <Screen>
+    <Screen header>
       <PageHeader
         title="Available bookings"
         description={`${open.length} open right now`}
@@ -41,36 +39,28 @@ export default function RiderRequests() {
                 {booking.pickup.name} → {booking.dropoff.name}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Text className="text-xs text-muted-foreground">
+            <CardContent className="gap-3">
+              <Text className="text-sm text-muted-foreground">
                 {VEHICLE_LABELS[booking.vehicle]} · {booking.distanceKm} km ·{" "}
-                {peso(booking.fare.total)} · {shortDate(booking.createdAt)}
+                {peso(booking.fare.total)} · {booking.passengerName}
               </Text>
-              <Text className="text-xs text-muted-foreground">
-                Passenger: {booking.passengerName}
-              </Text>
-              <View className="flex-row gap-2 pt-1">
+              <View className="flex-row gap-2">
                 <Button
-                  className="flex-1"
                   onPress={() => {
                     acceptBooking(booking.id, user!.id, user!.name)
-                    toast.success("Request accepted", {
-                      description: "Head to the pickup point.",
-                    })
-                    router.push(`/rider/trip/${booking.id}`)
+                    toast.success("Booking accepted")
                   }}
                 >
                   Accept
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
                   onPress={() => {
                     rejectBooking(booking.id)
-                    toast("Request declined")
+                    toast("Booking rejected")
                   }}
                 >
-                  Decline
+                  Reject
                 </Button>
               </View>
             </CardContent>

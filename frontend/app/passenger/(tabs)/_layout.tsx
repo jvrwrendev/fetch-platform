@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router"
-import { History, Home, PlusCircle, User } from "lucide-react-native"
+import { History, Home, MapPin, User } from "lucide-react-native"
 
 export default function PassengerTabs() {
   return (
@@ -24,7 +24,7 @@ export default function PassengerTabs() {
         options={{
           title: "Book",
           tabBarIcon: ({ color, size }) => (
-            <PlusCircle color={color} size={size} />
+            <MapPin color={color} size={size} />
           ),
         }}
       />

@@ -10,14 +10,21 @@ import {
   UsersRound,
 } from "lucide-react-native"
 
+import { useThemeColors } from "@/theme"
+
 export default function AdminTabs() {
+  const colors = useThemeColors()
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#171717",
-        tabBarInactiveTintColor: "#737373",
-        tabBarStyle: { borderTopColor: "#e5e5e5", backgroundColor: "#ffffff" },
+        tabBarActiveTintColor: colors.foreground,
+        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarStyle: {
+          borderTopColor: colors.border,
+          backgroundColor: colors.card,
+        },
         tabBarLabelStyle: { fontSize: 10 },
       }}
     >

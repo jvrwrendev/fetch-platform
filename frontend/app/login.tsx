@@ -15,11 +15,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Text } from "@/components/ui/text"
 import { useAuth } from "@/store/AuthContext"
+import { useThemeColors } from "@/theme"
 import type { Role } from "@/shared"
 
 export default function Login() {
   const { login } = useAuth()
   const router = useRouter()
+  const colors = useThemeColors()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
@@ -67,7 +69,7 @@ export default function Login() {
             </Text>
             <View className="flex-row gap-3">
               <Button className="flex-1" onPress={() => signIn("passenger")}>
-                <Navigation size={16} color="#fafafa" />
+                <Navigation size={16} color={colors.primaryForeground} />
                 <Text className="text-sm font-medium text-primary-foreground">
                   Passenger
                 </Text>
@@ -77,7 +79,7 @@ export default function Login() {
                 className="flex-1"
                 onPress={() => signIn("rider")}
               >
-                <Car size={16} color="#171717" />
+                <Car size={16} color={colors.foreground} />
                 <Text className="text-sm font-medium">Rider</Text>
               </Button>
             </View>

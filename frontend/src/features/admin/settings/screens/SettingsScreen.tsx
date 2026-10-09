@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { View } from "react-native"
+import { Pressable, View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
 import { Switch } from "@/components/ui/switch"
@@ -7,9 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import type { AdminSettings } from "@/shared"
 import { mockAdminApi } from "@/services/mock"
+import { useTheme, type ThemePreference } from "@/store/ThemeContext"
+import { cn } from "@/utils/cn"
+
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+]
 
 export default function AdminSettingsScreen() {
   const [settings, setSettings] = useState<AdminSettings | null>(null)
+  const { preference, setPreference } = useTheme()
 
   useEffect(() => {
     mockAdminApi.getSettings().then(setSettings)
@@ -62,6 +71,43 @@ export default function AdminSettingsScreen() {
           <Row label="Currency" value={settings?.currency ?? "—"} />
           <Row label="Timezone" value={settings?.timezone ?? "—"} />
           <Row label="Language" value={settings?.language ?? "—"} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="gap-3">
+          <Text className="text-sm text-muted-foreground">
+            Follow the system, or pin the app to light or dark.
+          </Text>
+          <View className="flex-row gap-2">
+            {THEME_OPTIONS.map((option) => {
+              const active = preference === option.value
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => setPreference(option.value)}
+                  className={cn(
+                    "flex-1 items-center rounded-md border py-2",
+                    active
+                      ? "border-primary bg-primary"
+                      : "border-border bg-background"
+                  )}
+                >
+                  <Text
+                    className={cn(
+                      "text-sm font-medium",
+                      active ? "text-primary-foreground" : "text-foreground"
+                    )}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </View>
         </CardContent>
       </Card>
     </Screen>

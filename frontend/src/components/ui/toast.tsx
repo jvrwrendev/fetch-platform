@@ -4,6 +4,7 @@ import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated"
 import { CheckCircle2, Info, XCircle } from "lucide-react-native"
 
 import { Text } from "@/components/ui/text"
+import { useThemeColors } from "@/theme"
 
 type ToastKind = "success" | "error" | "info"
 
@@ -53,14 +54,15 @@ const ICONS: Record<ToastKind, React.ComponentType<{ size?: number; color?: stri
   info: Info,
 }
 
-const ICON_COLOR: Record<ToastKind, string> = {
-  success: "#16a34a",
-  error: "#e7000b",
-  info: "#2563eb",
-}
-
 export function ToastHost() {
   const [items, setItems] = React.useState<ToastItem[]>([])
+  const colors = useThemeColors()
+
+  const iconColor: Record<ToastKind, string> = {
+    success: colors.success,
+    error: colors.destructive,
+    info: colors.info,
+  }
 
   React.useEffect(() => {
     const listener: Listener = (item) => {
@@ -89,7 +91,7 @@ export function ToastHost() {
             exiting={FadeOutUp}
             className="w-full max-w-md flex-row items-start gap-3 rounded-lg border border-border bg-card p-3"
           >
-            <Icon size={18} color={ICON_COLOR[item.kind]} />
+            <Icon size={18} color={iconColor[item.kind]} />
             <View className="flex-1 gap-0.5">
               <Text className="text-sm font-medium">{item.title}</Text>
               {item.description ? (

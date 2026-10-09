@@ -17,6 +17,7 @@ import { Text } from "@/components/ui/text"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import { useThemeColors } from "@/theme"
 
 export default function PassengerProfile() {
   const { user, updateProfile, logout } = useAuth()
@@ -30,6 +31,8 @@ export default function PassengerProfile() {
   }, [user?.name, user?.phone])
 
   const trips = bookings.filter((booking) => booking.passengerId === user?.id)
+
+  const colors = useThemeColors()
 
   const save = () => {
     updateProfile({ name, phone })
@@ -82,7 +85,7 @@ export default function PassengerProfile() {
           logout()
         }}
       >
-        <LogOut size={16} color="#171717" />
+        <LogOut size={16} color={colors.foreground} />
         <Text className="text-sm font-medium">Sign out</Text>
       </Button>
     </Screen>

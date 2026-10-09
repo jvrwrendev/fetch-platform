@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Avatar, initialsOf } from "@/components/ui/avatar"
 import { Text } from "@/components/ui/text"
 import { useAuth } from "@/store/AuthContext"
+import { useThemeColors } from "@/theme"
 
 /**
  * The persistent bar the original web shell had: brand on the left, the signed
@@ -14,6 +15,7 @@ import { useAuth } from "@/store/AuthContext"
 export function AppHeader() {
   const { user, logout } = useAuth()
   const insets = useSafeAreaInsets()
+  const colors = useThemeColors()
 
   return (
     <View
@@ -35,7 +37,7 @@ export function AppHeader() {
             accessibilityLabel="Log out"
             className="size-9 items-center justify-center rounded-full"
           >
-            <LogOut size={18} color="#171717" />
+            <LogOut size={18} color={colors.foreground} />
           </Pressable>
         </View>
       </View>

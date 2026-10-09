@@ -3,6 +3,7 @@ import { Pressable, View, type GestureResponderEvent, type LayoutChangeEvent } f
 import Svg, { Circle, Polyline, Rect } from "react-native-svg"
 
 import { mapColors } from "@/theme/colors"
+import { useThemeColors } from "@/theme"
 import type { MapViewProps } from "./mapTypes"
 
 /**
@@ -19,6 +20,7 @@ export default function MapView({
   className,
 }: MapViewProps) {
   const [size, setSize] = useState({ width: 0, height })
+  const colors = useThemeColors()
 
   const points = [
     ...markers.map((marker) => [marker.lat, marker.lng] as const),
@@ -67,12 +69,12 @@ export default function MapView({
       >
         {size.width > 0 ? (
           <Svg width={size.width} height={height}>
-            <Rect width={size.width} height={height} fill="#f5f5f5" />
+            <Rect width={size.width} height={height} fill={colors.secondary} />
             {routePoints ? (
               <Polyline
                 points={routePoints}
                 fill="none"
-                stroke={mapColors.route}
+                stroke={colors.foreground}
                 strokeWidth={3}
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -88,7 +90,7 @@ export default function MapView({
                   cy={y}
                   r={marker.variant === "location" ? 9 : 7}
                   fill={color}
-                  stroke="#ffffff"
+                  stroke={colors.background}
                   strokeWidth={2}
                 />
               )

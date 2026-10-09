@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import { useThemeColors } from "@/theme"
 import { VEHICLE_LABELS } from "@/shared"
 import { peso } from "@/utils/format"
 
@@ -14,6 +15,7 @@ export default function RiderActive() {
   const { user } = useAuth()
   const { bookings } = useBookings()
   const router = useRouter()
+  const colors = useThemeColors()
 
   const active = bookings.find(
     (booking) =>
@@ -26,7 +28,7 @@ export default function RiderActive() {
       <Screen header>
         <PageHeader title="Active trip" />
         <View className="items-center gap-3 rounded-xl border border-border bg-card p-8">
-          <Navigation size={22} color="#737373" />
+          <Navigation size={22} color={colors.mutedForeground} />
           <Text className="text-sm text-muted-foreground">
             No active trip right now.
           </Text>

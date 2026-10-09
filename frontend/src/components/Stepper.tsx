@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native"
 
 import { Text } from "@/components/ui/text"
 import { cn } from "@/utils/cn"
+import { useThemeColors } from "@/theme"
 
 export default function Stepper({
   steps,
@@ -13,6 +14,7 @@ export default function Stepper({
   current: number
   onSelect?: (index: number) => void
 }) {
+  const colors = useThemeColors()
   return (
     <View className="flex-row items-center">
       {steps.map((label, index) => {
@@ -35,7 +37,7 @@ export default function Stepper({
               )}
             >
               {done ? (
-                <Check size={14} color="#fafafa" />
+                <Check size={14} color={colors.primaryForeground} />
               ) : (
                 <Text
                   className={cn(

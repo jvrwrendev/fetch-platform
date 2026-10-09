@@ -23,6 +23,7 @@ import {
   markerProgress,
   riderOrigin,
 } from "@/services/mock/simulation"
+import { useThemeColors } from "@/theme"
 import { dateTime, peso, statusLabel } from "@/utils/format"
 
 const STEPS: TripStatus[] = [
@@ -50,6 +51,7 @@ export default function TripStatusScreen() {
   const router = useRouter()
   const { bookings, now, cancelBooking, rateBooking } = useBookings()
   const [rating, setRating] = useState(0)
+  const colors = useThemeColors()
 
   const booking = bookings.find((entry) => entry.id === id)
 
@@ -99,7 +101,7 @@ export default function TripStatusScreen() {
           onPress={() => router.replace("/passenger/dashboard")}
           className="size-9 items-center justify-center rounded-full border border-border"
         >
-          <ArrowLeft size={16} color="#171717" />
+          <ArrowLeft size={16} color={colors.foreground} />
         </Pressable>
         <PageHeader
           title="Your ride"
@@ -210,7 +212,7 @@ export default function TripStatusScreen() {
                     >
                       <Star
                         size={26}
-                        color={active ? "#f59e0b" : "#a1a1a1"}
+                        color={active ? "#f59e0b" : colors.mutedForeground}
                         fill={active ? "#f59e0b" : "transparent"}
                       />
                     </Pressable>

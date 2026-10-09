@@ -12,6 +12,7 @@ import { Text } from "@/components/ui/text"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import { useThemeColors } from "@/theme"
 import { peso } from "@/utils/format"
 
 export default function RiderProfile() {
@@ -29,6 +30,8 @@ export default function RiderProfile() {
   const earnings = mine
     .filter((booking) => booking.status === "completed")
     .reduce((sum, booking) => sum + booking.fare.total, 0)
+
+  const colors = useThemeColors()
 
   const save = () => {
     updateProfile({ name, phone })
@@ -56,7 +59,7 @@ export default function RiderProfile() {
 
       <Card>
         <CardHeader className="flex-row items-center gap-2">
-          <Car size={16} color="#171717" />
+          <Car size={16} color={colors.foreground} />
           <CardTitle className="text-base">Vehicle</CardTitle>
         </CardHeader>
         <CardContent>
@@ -87,7 +90,7 @@ export default function RiderProfile() {
       </Card>
 
       <Button variant="outline" onPress={logout}>
-        <LogOut size={16} color="#171717" />
+        <LogOut size={16} color={colors.foreground} />
         <Text className="text-sm font-medium">Sign out</Text>
       </Button>
     </Screen>

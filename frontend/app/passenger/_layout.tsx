@@ -2,9 +2,11 @@ import { Redirect, Stack } from "expo-router"
 
 import { Loading } from "@/components/layout/Loading"
 import { useAuth } from "@/store/AuthContext"
+import { useThemeColors } from "@/theme"
 
 export default function PassengerLayout() {
   const { user, ready } = useAuth()
+  const colors = useThemeColors()
   if (!ready) return <Loading />
   if (!user) return <Redirect href="/login" />
   if (user.role !== "passenger") return <Redirect href="/rider/dashboard" />
@@ -13,7 +15,7 @@ export default function PassengerLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#ffffff" },
+        contentStyle: { backgroundColor: colors.background },
       }}
     />
   )

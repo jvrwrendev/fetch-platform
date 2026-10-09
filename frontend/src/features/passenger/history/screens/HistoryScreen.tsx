@@ -7,11 +7,13 @@ import { Text } from "@/components/ui/text"
 import BookingCard from "@/components/BookingCard"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import { useThemeColors } from "@/theme"
 
 export default function PassengerHistory() {
   const { user } = useAuth()
   const { bookings } = useBookings()
   const router = useRouter()
+  const colors = useThemeColors()
 
   const trips = bookings
     .filter((booking) => booking.passengerId === user?.id)
@@ -23,7 +25,7 @@ export default function PassengerHistory() {
 
       {trips.length === 0 ? (
         <View className="items-center gap-2 rounded-xl border border-border bg-card p-8">
-          <HistoryIcon size={22} color="#737373" />
+          <HistoryIcon size={22} color={colors.mutedForeground} />
           <Text className="text-sm text-muted-foreground">No trips yet.</Text>
         </View>
       ) : (

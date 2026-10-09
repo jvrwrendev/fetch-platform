@@ -10,11 +10,13 @@ import BookingCard from "@/components/BookingCard"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
 import { isTerminal } from "@/services/mock/simulation"
+import { useThemeColors } from "@/theme"
 
 export default function PassengerHome() {
   const { user } = useAuth()
   const { bookings } = useBookings()
   const router = useRouter()
+  const colors = useThemeColors()
 
   const mine = bookings.filter((booking) => booking.passengerId === user?.id)
   const active = mine.find((booking) => !isTerminal(booking.status))
@@ -44,7 +46,7 @@ export default function PassengerHome() {
             size="sm"
             onPress={() => router.push("/passenger/booking")}
           >
-            <Plus size={16} color="#171717" />
+            <Plus size={16} color={colors.secondaryForeground} />
             <Text className="text-sm font-medium text-secondary-foreground">
               Book
             </Text>
@@ -72,7 +74,7 @@ export default function PassengerHome() {
               onPress={() => router.push({ pathname: "/passenger/tracking", params: { id: active.id } })}
             >
               <Text className="text-sm font-medium">View</Text>
-              <ArrowRight size={14} color="#171717" />
+              <ArrowRight size={14} color={colors.foreground} />
             </Button>
           </CardContent>
         </Card>

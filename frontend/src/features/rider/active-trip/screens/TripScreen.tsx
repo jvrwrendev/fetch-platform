@@ -17,6 +17,7 @@ import {
   type TripStatus,
 } from "@/shared"
 import { isTerminal, markerProgress, riderOrigin } from "@/services/mock/simulation"
+import { useThemeColors } from "@/theme"
 import { peso, statusLabel } from "@/utils/format"
 
 const NEXT: Record<
@@ -34,6 +35,7 @@ export default function RiderTrip() {
   const { bookings, now, setStatus } = useBookings()
 
   const booking = bookings.find((entry) => entry.id === id)
+  const colors = useThemeColors()
 
   if (!booking) {
     return (
@@ -68,7 +70,7 @@ export default function RiderTrip() {
           onPress={() => router.replace("/rider/dashboard")}
           className="size-9 items-center justify-center rounded-full border border-border"
         >
-          <ArrowLeft size={16} color="#171717" />
+          <ArrowLeft size={16} color={colors.foreground} />
         </Pressable>
         <PageHeader
           title="Trip"

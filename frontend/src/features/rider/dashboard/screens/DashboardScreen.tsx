@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import BookingCard from "@/components/BookingCard"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import { useThemeColors } from "@/theme"
 import { peso } from "@/utils/format"
 
 export default function RiderDashboard() {
@@ -18,6 +19,7 @@ export default function RiderDashboard() {
   const { bookings } = useBookings()
   const router = useRouter()
   const [online, setOnline] = useState(true)
+  const colors = useThemeColors()
 
   const mine = bookings.filter((booking) => booking.riderId === user?.id)
   const completed = mine.filter((booking) => booking.status === "completed")
@@ -71,7 +73,7 @@ export default function RiderDashboard() {
                   {active.status.replace(/_/g, " ")}
                 </Text>
               </View>
-              <ArrowRight size={18} color="#171717" />
+              <ArrowRight size={18} color={colors.foreground} />
             </CardContent>
           </Card>
         </Pressable>

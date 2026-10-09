@@ -2,6 +2,7 @@ import { View } from "react-native"
 import RNMapView, { Marker, Polyline } from "react-native-maps"
 
 import { mapColors } from "@/theme/colors"
+import { useThemeColors } from "@/theme"
 import type { MapViewProps } from "./mapTypes"
 
 /**
@@ -20,6 +21,7 @@ export default function MapView({
   className,
 }: MapViewProps) {
   const region = regionOf(center, markers, route)
+  const colors = useThemeColors()
 
   return (
     <View
@@ -47,7 +49,7 @@ export default function MapView({
               latitude: point.lat,
               longitude: point.lng,
             }))}
-            strokeColor={mapColors.route}
+            strokeColor={colors.foreground}
             strokeWidth={4}
           />
         ) : null}

@@ -8,10 +8,12 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { useAuth } from "@/store/AuthContext"
+import { useThemeColors } from "@/theme"
 
 export default function Landing() {
   const { user, ready } = useAuth()
   const router = useRouter()
+  const colors = useThemeColors()
 
   const go = () => {
     if (user) {
@@ -30,7 +32,7 @@ export default function Landing() {
             className="flex-row items-center gap-2"
           >
             <View className="size-9 items-center justify-center rounded-xl bg-primary">
-              <Car size={20} color="#fafafa" />
+              <Car size={20} color={colors.primaryForeground} />
             </View>
             <Text className="text-xl font-bold tracking-tight">Fetch</Text>
           </Animated.View>
@@ -47,12 +49,12 @@ export default function Landing() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(220)} className="gap-3">
-            <Feature icon={<MapPin size={18} color="#171717" />} title="Live tracking">
+            <Feature icon={<MapPin size={18} color={colors.foreground} />} title="Live tracking">
               Pick a pickup and a drop-off, then follow the ride from request to
               receipt.
             </Feature>
             <Feature
-              icon={<ShieldCheck size={18} color="#171717" />}
+              icon={<ShieldCheck size={18} color={colors.foreground} />}
               title="Transparent fares"
             >
               One fare engine shared across the passenger, rider and admin

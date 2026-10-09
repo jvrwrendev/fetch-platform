@@ -27,8 +27,8 @@ const badgeTextVariants: Record<string, string> = {
   default: "text-primary-foreground",
   secondary: "text-secondary-foreground",
   outline: "text-foreground",
-  destructive: "text-white",
-  success: "text-white",
+  destructive: "text-destructive-foreground",
+  success: "text-success-foreground",
 }
 
 export interface BadgeProps

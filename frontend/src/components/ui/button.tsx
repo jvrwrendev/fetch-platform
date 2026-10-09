@@ -8,6 +8,7 @@ import {
 } from "react-native"
 
 import { cn } from "@/utils/cn"
+import { useThemeColors } from "@/theme"
 
 const buttonVariants = cva(
   "flex-row items-center justify-center gap-2 rounded-md",
@@ -37,7 +38,7 @@ const buttonVariants = cva(
 
 const labelVariants: Record<string, string> = {
   default: "text-primary-foreground",
-  destructive: "text-white",
+  destructive: "text-destructive-foreground",
   outline: "text-foreground",
   secondary: "text-secondary-foreground",
   ghost: "text-foreground",
@@ -68,6 +69,13 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
     ref
   ) => {
     const tone = labelVariants[variant ?? "default"] ?? labelVariants.default
+    const colors = useThemeColors()
+    const spinnerColor =
+      variant === "default"
+        ? colors.primaryForeground
+        : variant === "destructive"
+          ? colors.destructiveForeground
+          : colors.foreground
     return (
       <Pressable
         ref={ref}
@@ -80,10 +88,7 @@ export const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, But
         {...props}
       >
         {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={variant === "default" || variant === "destructive" ? "#fafafa" : "#171717"}
-          />
+          <ActivityIndicator size="small" color={spinnerColor} />
         ) : null}
         {typeof children === "string" ? (
           <Text className={cn("text-sm font-medium", tone, textClassName)}>

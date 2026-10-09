@@ -25,6 +25,7 @@ import {
   type VehicleType,
 } from "@/shared"
 import { mapColors } from "@/theme/colors"
+import { useThemeColors } from "@/theme"
 import { peso } from "@/utils/format"
 
 const STEPS = ["Pickup", "Drop-off", "Confirm"]
@@ -58,6 +59,7 @@ export default function BookRide() {
   const [vehicle, setVehicle] = useState<VehicleType>(initialVehicle)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
   const [locating, setLocating] = useState(false)
+  const colors = useThemeColors()
 
   const estimate = useMemo(
     () => (pickup && dropoff ? estimateFare(pickup, dropoff, vehicle) : null),
@@ -240,14 +242,14 @@ export default function BookRide() {
                 >
                   {locating ? (
                     <>
-                      <Loader2 size={16} color="#171717" />
+                      <Loader2 size={16} color={colors.foreground} />
                       <Text className="text-sm font-medium">
                         Getting location…
                       </Text>
                     </>
                   ) : (
                     <>
-                      <Crosshair size={16} color="#171717" />
+                      <Crosshair size={16} color={colors.foreground} />
                       <Text className="text-sm font-medium">
                         Use my current location
                       </Text>
@@ -278,7 +280,7 @@ export default function BookRide() {
                   </View>
                 ) : (
                   <View className="flex-row items-center gap-1.5 rounded-lg border border-dashed border-border p-3">
-                    <MapPin size={14} color="#737373" />
+                    <MapPin size={14} color={colors.mutedForeground} />
                     <Text className="text-sm text-muted-foreground">
                       No drop-off selected yet
                     </Text>

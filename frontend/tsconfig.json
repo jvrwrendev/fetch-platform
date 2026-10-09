@@ -8,5 +8,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "../shared/src/**/*.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "../shared/src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test"]
 }

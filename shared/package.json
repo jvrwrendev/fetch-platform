@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "test": "node --test test/fare.test.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./types": "./src/types.ts",

@@ -12,6 +12,9 @@
     "build:mobile": "npm --prefix frontend run export:web",
     "typecheck:mobile": "npm --prefix frontend run typecheck",
     "typecheck:backend": "npm run typecheck -w backend",
+    "test": "npm run test -w @fetch/shared && npm --prefix frontend run test",
+    "test:shared": "npm run test -w @fetch/shared",
+    "test:mobile": "npm --prefix frontend run test",
     "install:mobile": "npm --prefix frontend install",
     "install:all": "npm install && npm --prefix frontend install"
   }

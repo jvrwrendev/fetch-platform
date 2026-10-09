@@ -14,6 +14,7 @@ import { Text } from "@/components/ui/text"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import { useSettings, type SavedPlace } from "@/store/SettingsContext"
 import { useRoute } from "@/hooks/useRoute"
 import {
   BOOKING_TYPE_CTA,
@@ -24,6 +25,7 @@ import {
   VEHICLE_LABELS,
   estimateErrandFare,
   estimateFare,
+  isInServiceArea,
   resolveBookingType,
   type Booking,
   type BookingErrandItem,
@@ -64,6 +66,7 @@ function pinPoint(pos: { lat: number; lng: number }): GeoPoint {
 export default function BookRide() {
   const { user } = useAuth()
   const { createBooking } = useBookings()
+  const { settings } = useSettings()
   const router = useRouter()
   const { vehicle: vehicleParam, type: typeParam } = useLocalSearchParams<{
     vehicle?: string
@@ -79,7 +82,9 @@ export default function BookRide() {
   const [pickup, setPickup] = useState<GeoPoint | null>(null)
   const [dropoff, setDropoff] = useState<GeoPoint | null>(null)
   const [vehicle, setVehicle] = useState<VehicleType>(initialVehicle)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
+  const [paymentOverride, setPaymentOverride] = useState<PaymentMethod | null>(
+    null
+  )
   const [locating, setLocating] = useState(false)
   const [items, setItems] = useState<BookingErrandItem[]>([])
   const [itemBudget, setItemBudget] = useState("")
@@ -87,6 +92,10 @@ export default function BookRide() {
   const [recipientPhone, setRecipientPhone] = useState("")
   const [notes, setNotes] = useState("")
   const colors = useThemeColors()
+
+  const paymentMethod = paymentOverride ?? settings.defaultPaymentMethod
+  const outsidePickup = Boolean(pickup && !isInServiceArea(pickup))
+  const outsideDropoff = Boolean(dropoff && !isInServiceArea(dropoff))
 
   const steps = STEPS_BY_TYPE[bookingType]
 
@@ -312,6 +321,20 @@ export default function BookRide() {
         </View>
       </View>
 
+      {outsidePickup || outsideDropoff ? (
+        <View className="rounded-lg border border-destructive/40 bg-destructive/10 p-3">
+          <Text className="text-xs text-destructive">
+            {outsidePickup && outsideDropoff
+              ? "Pickup and drop-off are outside"
+              : outsidePickup
+                ? "Pickup is outside"
+                : "Drop-off is outside"}{" "}
+            the Malaybalay–Valencia service area. Riders may not be available
+            there yet.
+          </Text>
+        </View>
+      ) : null}
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
@@ -355,7 +378,11 @@ export default function BookRide() {
                     </>
                   )}
                 </Button>
-                <PlaceChips value={pickup} onSelect={setPickup} />
+                <PlaceChips
+                  value={pickup}
+                  onSelect={setPickup}
+                  saved={settings.savedPlaces}
+                />
                 {pickup ? (
                   <View className="rounded-lg border border-border p-3">
                     <Text className="text-sm font-medium">{pickup.name}</Text>
@@ -369,7 +396,11 @@ export default function BookRide() {
 
             {step === 1 ? (
               <View className="gap-4">
-                <PlaceChips value={dropoff} onSelect={setDropoff} />
+                <PlaceChips
+                  value={dropoff}
+                  onSelect={setDropoff}
+                  saved={settings.savedPlaces}
+                />
                 {dropoff ? (
                   <View className="rounded-lg border border-border p-3">
                     <Text className="text-sm font-medium">{dropoff.name}</Text>
@@ -493,7 +524,7 @@ export default function BookRide() {
                         key={option}
                         label={PAYMENT_LABEL[option]}
                         selected={paymentMethod === option}
-                        onPress={() => setPaymentMethod(option)}
+                        onPress={() => setPaymentOverride(option)}
                       />
                     ))}
                   </View>
@@ -530,37 +561,74 @@ export default function BookRide() {
 function PlaceChips({
   value,
   onSelect,
+  saved = [],
 }: {
   value: GeoPoint | null
   onSelect: (point: GeoPoint) => void
+  saved?: SavedPlace[]
 }) {
   return (
-    <View className="gap-2">
-      <Text className="text-sm font-medium">Popular places</Text>
-      <View className="flex-row flex-wrap gap-2">
-        {LOCATIONS.map((location) => {
-          const selected =
-            value?.name === location.name && value?.address === location.address
-          return (
-            <Pressable
-              key={location.name}
-              onPress={() => onSelect(location)}
-              className={
-                selected
-                  ? "rounded-full border border-primary bg-primary px-3 py-1.5"
-                  : "rounded-full border border-border bg-background px-3 py-1.5"
-              }
-            >
-              <Text
+    <View className="gap-3">
+      {saved.length > 0 ? (
+        <View className="gap-2">
+          <Text className="text-sm font-medium">Saved places</Text>
+          <View className="flex-row flex-wrap gap-2">
+            {saved.map((place) => {
+              const selected =
+                value?.name === place.point.name &&
+                value?.address === place.point.address
+              return (
+                <Pressable
+                  key={place.id}
+                  onPress={() => onSelect(place.point)}
+                  className={
+                    selected
+                      ? "rounded-full border border-primary bg-primary px-3 py-1.5"
+                      : "rounded-full border border-border bg-background px-3 py-1.5"
+                  }
+                >
+                  <Text
+                    className={
+                      selected ? "text-xs text-primary-foreground" : "text-xs"
+                    }
+                  >
+                    {place.label}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      <View className="gap-2">
+        <Text className="text-sm font-medium">Popular places</Text>
+        <View className="flex-row flex-wrap gap-2">
+          {LOCATIONS.map((location) => {
+            const selected =
+              value?.name === location.name &&
+              value?.address === location.address
+            return (
+              <Pressable
+                key={location.name}
+                onPress={() => onSelect(location)}
                 className={
-                  selected ? "text-xs text-primary-foreground" : "text-xs"
+                  selected
+                    ? "rounded-full border border-primary bg-primary px-3 py-1.5"
+                    : "rounded-full border border-border bg-background px-3 py-1.5"
                 }
               >
-                {location.name}
-              </Text>
-            </Pressable>
-          )
-        })}
+                <Text
+                  className={
+                    selected ? "text-xs text-primary-foreground" : "text-xs"
+                  }
+                >
+                  {location.name}
+                </Text>
+              </Pressable>
+            )
+          })}
+        </View>
       </View>
     </View>
   )

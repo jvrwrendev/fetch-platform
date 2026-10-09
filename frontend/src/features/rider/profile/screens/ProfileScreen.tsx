@@ -1,9 +1,9 @@
-import { Car, LogOut } from "lucide-react-native"
+import { useRouter } from "expo-router"
+import { LogOut, Settings as SettingsIcon } from "lucide-react-native"
 import { useEffect, useState } from "react"
 import { View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
-import { AppearanceCard } from "@/components/AppearanceCard"
 import { Avatar, initialsOf } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +19,7 @@ import { peso } from "@/utils/format"
 export default function RiderProfile() {
   const { user, updateProfile, logout } = useAuth()
   const { bookings } = useBookings()
+  const router = useRouter()
   const [name, setName] = useState(user?.name ?? "")
   const [phone, setPhone] = useState(user?.phone ?? "")
 
@@ -59,17 +60,6 @@ export default function RiderProfile() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center gap-2">
-          <Car size={16} color={colors.foreground} />
-          <CardTitle className="text-base">Vehicle</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Row label="Model" value={user?.vehicleModel ?? "—"} />
-          <Row label="Plate" value={user?.plateNumber ?? "—"} />
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader>
           <CardTitle className="text-base">Details</CardTitle>
         </CardHeader>
@@ -90,7 +80,10 @@ export default function RiderProfile() {
         </CardContent>
       </Card>
 
-      <AppearanceCard />
+      <Button variant="outline" onPress={() => router.push("/rider/settings")}>
+        <SettingsIcon size={16} color={colors.foreground} />
+        <Text className="text-sm font-medium">Settings</Text>
+      </Button>
 
       <Button variant="outline" onPress={logout}>
         <LogOut size={16} color={colors.foreground} />

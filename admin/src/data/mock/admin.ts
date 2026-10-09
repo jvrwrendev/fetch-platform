@@ -6,7 +6,7 @@ export const ADMIN_PROFILE: AdminProfile = {
   email: "admin@fetch.ph",
   phone: "+63 917 555 0142",
   role: "Platform Administrator",
-  city: "Taguig City",
+  city: "Malaybalay City",
   joinedAt: "2024-03-11T08:00:00+08:00",
   initials: "PV",
 }

@@ -1,8 +1,8 @@
 # FETCH Platform
 
-A ride-hailing platform, rebuilt as a workspace monorepo: one shared domain core,
-an Expo app for passengers and riders, a Vite web console for admins, and a
-skeleton for the backend that isn't written yet.
+A ride-hailing platform for Bukidnon, rebuilt as a workspace monorepo: one
+shared domain core, an Expo app for passengers and riders, a Vite web console
+for admins, and a skeleton for the backend that isn't written yet.
 
 **This build is mock-only.** There is no server and no database — every screen
 reads from the shared mock world in `shared/` and the ride lifecycle is
@@ -85,18 +85,24 @@ admin fare editor and the passenger app's quote both go through `estimateFare` /
   with a service choice: **Book ride**, **Pabili** (buy it for me) or **Pasugo**
   (pick it up and deliver it). Each runs the same live trip (`searching →
   accepted → arriving → in_progress → completed`) with an animated rider
-  marker, ETA, cancellation, receipt and a star rating, plus trip history and
-  profile. Pabili and Pasugo are the local errands: the rider shops or collects
-  on the passenger's behalf and the receipt carries the shopping list and, for
-  Pasugo, the recipient.
+  marker, ETA, cancellation, receipt and a star rating, plus trip history,
+  profile and a settings screen (notifications, default payment, saved places,
+  service area, appearance). Pabili and Pasugo are the local errands: the rider
+  shops or collects on the passenger's behalf and the receipt carries the
+  shopping list and, for Pasugo, the recipient.
 - **Rider** — go online, see open requests, accept/decline, advance a trip
-  through its stages, earnings and history.
+  through its stages, earnings and history, plus a settings screen
+  (availability, notifications, vehicle, service area, appearance).
 - **Admin** (`admin/`, browser) — dashboard stats and charts, passengers, riders,
   bookings, fare rates, a Leaflet live map, reports, notifications, profile and
   settings, all reading the same mock world.
 - **Live simulation** — a booking is driven by the clock: `searching →
   accepted → arriving → in_progress → completed`, with the rider marker moving
   along the route. No second device or tab is required to demo a full ride.
+- **Service area** — FETCH is Bukidnon-based. Riders are live in **Malaybalay
+  City** and **Valencia City** (12 km around each); the map opens on the
+  province and the other municipalities are listed as "coming next". Booking a
+  point outside the two cities shows a notice rather than dead-ending.
 
 ## Notes & limitations
 
@@ -105,6 +111,8 @@ admin fare editor and the passenger app's quote both go through `estimateFare` /
 - Fare-rate edits in the admin console update the in-memory mock store; because
   there is no backend they do not persist across reloads, and they are not shared
   with a running Expo session.
+- The service area is advisory in this mock: an out-of-area pickup is flagged but
+  still allowed, since there is no rider-matching backend to reject it.
 - The native map uses `react-native-maps` (bundled with Expo Go). The web export
   draws the route and markers as SVG so the browser demo still works.
 - `frontend/` targets Expo SDK 53. Expo Go on the app stores tracks the latest

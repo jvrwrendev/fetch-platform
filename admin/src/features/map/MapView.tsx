@@ -3,6 +3,8 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
+import { REGION } from "@fetch/shared"
+
 export interface MapMarker {
   position: [number, number]
   label: string
@@ -44,8 +46,8 @@ function FitBounds({ points, flyKey }: { points: [number, number][]; flyKey?: st
 }
 
 export function MapView({
-  center = [14.5995, 121.0244],
-  zoom = 12,
+  center = [REGION.center.lat, REGION.center.lng],
+  zoom = 11,
   markers = [],
   height = 420,
   className,

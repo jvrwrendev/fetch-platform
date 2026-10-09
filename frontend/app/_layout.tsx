@@ -8,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { ToastHost } from "@/components/ui/toast"
 import { AuthProvider } from "@/store/AuthContext"
 import { BookingsProvider } from "@/store/BookingsContext"
+import { SettingsProvider } from "@/store/SettingsContext"
 import { ThemeProvider, useTheme } from "@/store/ThemeContext"
 import { useThemeColors } from "@/theme"
 
@@ -17,10 +18,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <BookingsProvider>
-              <ThemedStack />
-              <ToastHost />
-            </BookingsProvider>
+            <SettingsProvider>
+              <BookingsProvider>
+                <ThemedStack />
+                <ToastHost />
+              </BookingsProvider>
+            </SettingsProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

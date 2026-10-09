@@ -1,6 +1,7 @@
 import { View } from "react-native"
 import RNMapView, { Marker, Polyline } from "react-native-maps"
 
+import { REGION } from "@/shared"
 import { mapColors } from "@/theme/colors"
 import { useThemeColors } from "@/theme"
 import type { MapViewProps } from "./mapTypes"
@@ -88,8 +89,8 @@ function regionOf(
   ]
   if (points.length === 0) {
     return {
-      latitude: 14.5547,
-      longitude: 121.0244,
+      latitude: REGION.center.lat,
+      longitude: REGION.center.lng,
       latitudeDelta: 0.1,
       longitudeDelta: 0.1,
     }

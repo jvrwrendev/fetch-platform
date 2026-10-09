@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
+import { LIVE_CITIES } from "@/shared"
 import { useAuth } from "@/store/AuthContext"
 import { useThemeColors } from "@/theme"
 
@@ -39,7 +40,7 @@ export default function Landing() {
 
           <Animated.View entering={FadeInDown.delay(120)} className="gap-4">
             <Text className="text-4xl font-bold tracking-tight">
-              Rides across the metro, in a couple of taps.
+              Rides across Bukidnon, in a couple of taps.
             </Text>
             <Text className="text-base text-muted-foreground">
               Book a motor, sedan or SUV, watch your rider arrive in real time,
@@ -60,6 +61,23 @@ export default function Landing() {
               One fare engine shared across the passenger, rider and admin
               experiences.
             </Feature>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(280)} className="gap-2">
+            <Text className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Now serving
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {LIVE_CITIES.map((city) => (
+                <View
+                  key={city.name}
+                  className="flex-row items-center gap-1.5 rounded-full border border-border px-3 py-1.5"
+                >
+                  <MapPin size={12} color={colors.mutedForeground} />
+                  <Text className="text-xs">{city.name}</Text>
+                </View>
+              ))}
+            </View>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(320)} className="mt-auto gap-3">

@@ -152,7 +152,7 @@ function Header() {
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold">{title}</p>
         <p className="hidden text-xs text-muted-foreground sm:block">
-          Fetch Admin Console · Metro Manila
+          Fetch Admin Console · Bukidnon
         </p>
       </div>
       <div className="ml-auto flex items-center gap-1.5">

@@ -160,7 +160,7 @@ export default function LiveMapPage() {
           <CardHeader className="border-b">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <CardTitle>Metro Manila coverage</CardTitle>
+                <CardTitle>Bukidnon coverage</CardTitle>
                 <CardDescription>
                   Last synced {lastSync.toLocaleTimeString("en-PH")}
                 </CardDescription>

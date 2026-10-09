@@ -1,9 +1,9 @@
-import { LogOut } from "lucide-react-native"
+import { useRouter } from "expo-router"
+import { LogOut, Settings as SettingsIcon } from "lucide-react-native"
 import { useEffect, useState } from "react"
 import { View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
-import { AppearanceCard } from "@/components/AppearanceCard"
 import { Avatar, initialsOf } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +23,7 @@ import { useThemeColors } from "@/theme"
 export default function PassengerProfile() {
   const { user, updateProfile, logout } = useAuth()
   const { bookings } = useBookings()
+  const router = useRouter()
   const [name, setName] = useState(user?.name ?? "")
   const [phone, setPhone] = useState(user?.phone ?? "")
 
@@ -80,7 +81,10 @@ export default function PassengerProfile() {
         </CardContent>
       </Card>
 
-      <AppearanceCard />
+      <Button variant="outline" onPress={() => router.push("/passenger/settings")}>
+        <SettingsIcon size={16} color={colors.foreground} />
+        <Text className="text-sm font-medium">Settings</Text>
+      </Button>
 
       <Button
         variant="outline"

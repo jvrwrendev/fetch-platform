@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Pressable, View, type GestureResponderEvent, type LayoutChangeEvent } from "react-native"
 import Svg, { Circle, Polyline, Rect } from "react-native-svg"
 
+import { REGION } from "@/shared"
 import { mapColors } from "@/theme/colors"
 import { useThemeColors } from "@/theme"
 import type { MapViewProps } from "./mapTypes"
@@ -104,7 +105,13 @@ export default function MapView({
 
 function boundsOf(points: readonly (readonly [number, number])[]) {
   if (points.length === 0) {
-    return { minLat: 14.5, maxLat: 14.7, minLng: 120.95, maxLng: 121.1 }
+    const { lat, lng } = REGION.center
+    return {
+      minLat: lat - 0.12,
+      maxLat: lat + 0.12,
+      minLng: lng - 0.12,
+      maxLng: lng + 0.12,
+    }
   }
   let minLat = Infinity
   let maxLat = -Infinity

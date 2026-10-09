@@ -118,7 +118,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description="Real-time snapshot of the Fetch ride platform across Metro Manila."
+        description="Real-time snapshot of the Fetch ride platform across Bukidnon."
         actions={
           <>
             <Button variant="outline" render={<Link to="/live-map" />}>

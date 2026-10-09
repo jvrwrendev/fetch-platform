@@ -32,7 +32,7 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatCard } from "@/components/shared/StatCard"
 import { reportsService } from "@/lib/services"
-import type { ReportsSummary, TripStatus, VehicleType } from "@/lib/types"
+import type { BookingType, ReportsSummary, TripStatus } from "@/lib/types"
 import { compactNumber, formatNumber, peso } from "@/lib/format"
 
 type Range = 7 | 30 | 90
@@ -41,10 +41,10 @@ const revenueConfig = {
   revenue: { label: "Revenue", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-const vehicleConfig = {
-  motor: { label: "Motorcycle", color: "var(--chart-1)" },
-  sedan: { label: "Sedan", color: "var(--chart-2)" },
-  suv: { label: "SUV", color: "var(--chart-3)" },
+const serviceConfig = {
+  ride: { label: "Ride", color: "var(--chart-1)" },
+  pabili: { label: "Pabili", color: "var(--chart-2)" },
+  padala: { label: "Pasugo", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
 const growthConfig = {
@@ -60,10 +60,10 @@ const STATUS_COLORS: Record<TripStatus, string> = {
   searching: "#f59e0b",
 }
 
-const VEHICLE_LABEL: Record<VehicleType, string> = {
-  motor: "Motorcycle",
-  sedan: "Sedan",
-  suv: "SUV",
+const SERVICE_LABEL: Record<BookingType, string> = {
+  ride: "Ride",
+  pabili: "Pabili",
+  padala: "Pasugo",
 }
 
 export default function ReportsPage() {
@@ -245,15 +245,15 @@ export default function ReportsPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue by vehicle type</CardTitle>
-                <CardDescription>Completed fare split per vehicle class</CardDescription>
+                <CardTitle>Revenue by service</CardTitle>
+                <CardDescription>Completed fare split per service</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={vehicleConfig} className="h-64 w-full">
+                <ChartContainer config={serviceConfig} className="h-64 w-full">
                   <BarChart
-                    data={data.bookingsByVehicle.map((v) => ({
+                    data={data.bookingsByService.map((v) => ({
                       ...v,
-                      label: VEHICLE_LABEL[v.vehicle],
+                      label: SERVICE_LABEL[v.type],
                     }))}
                     margin={{ left: -14, right: 8, top: 8 }}
                   >
@@ -267,8 +267,8 @@ export default function ReportsPage() {
                     />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
-                      {data.bookingsByVehicle.map((entry) => (
-                        <Cell key={entry.vehicle} fill={`var(--color-${entry.vehicle})`} />
+                      {data.bookingsByService.map((entry) => (
+                        <Cell key={entry.type} fill={`var(--color-${entry.type})`} />
                       ))}
                     </Bar>
                   </BarChart>

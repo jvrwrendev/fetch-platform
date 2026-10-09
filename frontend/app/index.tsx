@@ -43,9 +43,9 @@ export default function Landing() {
               Rides across Bukidnon, in a couple of taps.
             </Text>
             <Text className="text-base text-muted-foreground">
-              Book a motor, sedan or SUV, watch your rider arrive in real time,
-              and settle up your way. This is a mock build — no real money, no
-              real cars.
+              Book a motorcycle ride, have a rider run an errand, and watch them
+              arrive in real time. This is a mock build — no real money, no real
+              motorcycles.
             </Text>
           </Animated.View>
 

@@ -22,7 +22,6 @@ import {
   BOOKING_TYPE_TITLE,
   LOCATIONS,
   PAYMENT_METHODS,
-  VEHICLE_LABELS,
   estimateErrandFare,
   estimateFare,
   isInServiceArea,
@@ -33,7 +32,6 @@ import {
   type ErrandType,
   type GeoPoint,
   type PaymentMethod,
-  type VehicleType,
 } from "@/shared"
 import { mapColors } from "@/theme/colors"
 import { useThemeColors } from "@/theme"
@@ -47,11 +45,9 @@ const STEPS_BY_TYPE: Record<BookingType, string[]> = {
   pabili: ["Store", "Deliver", "Confirm"],
   padala: ["Pickup", "Deliver", "Confirm"],
 }
-const VEHICLES: VehicleType[] = ["motor", "sedan", "suv"]
 const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
-  gcash: "GCash",
-  maya: "Maya",
+  ewallet: "E-Wallet",
 }
 
 function pinPoint(pos: { lat: number; lng: number }): GeoPoint {
@@ -68,20 +64,13 @@ export default function BookRide() {
   const { createBooking } = useBookings()
   const { settings } = useSettings()
   const router = useRouter()
-  const { vehicle: vehicleParam, type: typeParam } = useLocalSearchParams<{
-    vehicle?: string
-    type?: string
-  }>()
-  const initialVehicle = VEHICLES.includes(vehicleParam as VehicleType)
-    ? (vehicleParam as VehicleType)
-    : "sedan"
+  const { type: typeParam } = useLocalSearchParams<{ type?: string }>()
   const [bookingType, setBookingType] = useState<BookingType>(() =>
     resolveBookingType(typeParam)
   )
   const [step, setStep] = useState(0)
   const [pickup, setPickup] = useState<GeoPoint | null>(null)
   const [dropoff, setDropoff] = useState<GeoPoint | null>(null)
-  const [vehicle, setVehicle] = useState<VehicleType>(initialVehicle)
   const [paymentOverride, setPaymentOverride] = useState<PaymentMethod | null>(
     null
   )
@@ -100,8 +89,8 @@ export default function BookRide() {
   const steps = STEPS_BY_TYPE[bookingType]
 
   const estimate = useMemo(
-    () => (pickup && dropoff ? estimateFare(pickup, dropoff, vehicle) : null),
-    [pickup, dropoff, vehicle]
+    () => (pickup && dropoff ? estimateFare(pickup, dropoff) : null),
+    [pickup, dropoff]
   )
   const errand = useMemo(
     () =>
@@ -236,7 +225,6 @@ export default function BookRide() {
     const payload: Parameters<typeof createBooking>[0] = {
       passengerId: user.id,
       passengerName: user.name,
-      vehicle,
       pickup,
       dropoff,
       distanceKm: quote.distanceKm,
@@ -501,20 +489,6 @@ export default function BookRide() {
                     onNotesChange={setNotes}
                   />
                 ) : null}
-
-                <View className="gap-2">
-                  <Text className="text-sm font-medium">Vehicle</Text>
-                  <View className="flex-row gap-2">
-                    {VEHICLES.map((option) => (
-                      <Choice
-                        key={option}
-                        label={VEHICLE_LABELS[option]}
-                        selected={vehicle === option}
-                        onPress={() => setVehicle(option)}
-                      />
-                    ))}
-                  </View>
-                </View>
 
                 <View className="gap-2">
                   <Text className="text-sm font-medium">Payment</Text>

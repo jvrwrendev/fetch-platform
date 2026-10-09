@@ -4,7 +4,8 @@
 
 export type Role = "passenger" | "rider"
 
-export type VehicleType = "motor" | "sedan" | "suv"
+/** The one vehicle class the platform runs: motorcycle taxis. */
+export const VEHICLE_LABEL = "Motorcycle"
 
 /**
  * What a passenger is asking for.
@@ -79,7 +80,6 @@ export interface Passenger {
 }
 
 export interface RiderVehicle {
-  type: VehicleType
   model: string
   plateNumber: string
 }
@@ -110,20 +110,15 @@ export interface BookingFare {
   total: number
 }
 
-export interface VehicleRate {
+export interface FareConfig {
   base: number
   perKm: number
-}
-
-export interface FareConfig {
-  vehicle: Record<VehicleType, VehicleRate>
   bookingFee: number
   minFare: number
   surgeMultiplier: number
 }
 
 export interface FareQuote {
-  vehicle: VehicleType
   distanceKm: number
   base: number
   distanceCost: number
@@ -134,7 +129,7 @@ export interface FareQuote {
   total: number
 }
 
-export type PaymentMethod = "cash" | "gcash" | "maya"
+export type PaymentMethod = "cash" | "ewallet"
 
 export interface Booking {
   id: string
@@ -143,7 +138,6 @@ export interface Booking {
   passengerName: string
   riderId?: string
   riderName?: string
-  vehicle: VehicleType
   pickup: GeoPoint
   dropoff: GeoPoint
   distanceKm: number
@@ -221,7 +215,7 @@ export interface RevenuePoint {
 export interface ReportsSummary {
   revenueByDay: RevenuePoint[]
   bookingsByStatus: { status: TripStatus; count: number }[]
-  bookingsByVehicle: { vehicle: VehicleType; count: number; revenue: number }[]
+  bookingsByService: { type: BookingType; count: number; revenue: number }[]
   topRoutes: { route: string; count: number; revenue: number }[]
   topRiders: { id: string; name: string; trips: number; revenue: number; rating: number }[]
   passengerGrowth: { month: string; passengers: number }[]

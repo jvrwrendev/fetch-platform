@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router"
-import { History, Home, ListChecks, Navigation, User } from "lucide-react-native"
+import { History, Home, ListChecks, Navigation } from "lucide-react-native"
 
 import { useThemeColors } from "@/theme"
 
@@ -51,13 +51,6 @@ export default function RiderTabs() {
           tabBarIcon: ({ color, size }) => (
             <History color={color} size={size} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
     </Tabs>

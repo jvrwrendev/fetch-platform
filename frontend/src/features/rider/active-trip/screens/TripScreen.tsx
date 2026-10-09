@@ -13,7 +13,7 @@ import { useBookings } from "@/store/BookingsContext"
 import {
   pointAlong,
   serviceLabel,
-  VEHICLE_LABELS,
+  VEHICLE_LABEL,
   type LatLng,
   type TripStatus,
 } from "@/shared"
@@ -107,7 +107,7 @@ export default function RiderTrip() {
           <Row label="Passenger" value={booking.passengerName} />
           <Row label="Pickup" value={booking.pickup.name} />
           <Row label="Drop-off" value={booking.dropoff.name} />
-          <Row label="Vehicle" value={VEHICLE_LABELS[booking.vehicle]} />
+          <Row label="Vehicle" value={VEHICLE_LABEL} />
           {serviceLabel(booking.bookingType, "rider") ? (
             <Row
               label="Service"

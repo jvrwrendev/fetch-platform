@@ -23,7 +23,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { UserCell } from "@/components/shared/UserCell"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { useRiders } from "./RidersContext"
-import type { Rider, RiderApproval, RiderStatus, VehicleType } from "@/lib/types"
+import type { Rider, RiderApproval, RiderStatus } from "@/lib/types"
 import { formatDate, formatNumber, percent } from "@/lib/format"
 import { useDebounce } from "@/hooks/use-debounce"
 
@@ -33,11 +33,7 @@ type PendingAction =
   | { type: "approval"; rider: Rider; approval: RiderApproval }
   | { type: "status"; rider: Rider; status: RiderStatus }
 
-const VEHICLE_LABEL: Record<VehicleType, string> = {
-  motor: "Motorcycle",
-  sedan: "Sedan",
-  suv: "SUV",
-}
+const VEHICLE_LABEL = "Motorcycle"
 
 export default function RidersPage() {
   const { data, loading, error, fetchRiders, setApproval, setStatus } = useRiders()
@@ -45,7 +41,6 @@ export default function RidersPage() {
   const [search, setSearch] = useState("")
   const [approval, setApprovalFilter] = useState<RiderApproval | "all">("all")
   const [status, setStatusFilter] = useState<RiderStatus | "all">("all")
-  const [vehicle, setVehicle] = useState<VehicleType | "all">("all")
   const [sort, setSort] = useState<SortKey>("joined")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [page, setPage] = useState(1)
@@ -58,11 +53,11 @@ export default function RidersPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, approval, status, vehicle, sort, sortDir])
+  }, [debouncedSearch, approval, status, sort, sortDir])
 
   useEffect(() => {
-    fetchRiders({ search: debouncedSearch, approval, status, vehicle, sort, sortDir, page, pageSize })
-  }, [fetchRiders, debouncedSearch, approval, status, vehicle, sort, sortDir, page])
+    fetchRiders({ search: debouncedSearch, approval, status, sort, sortDir, page, pageSize })
+  }, [fetchRiders, debouncedSearch, approval, status, sort, sortDir, page])
 
   const handleSort = useCallback((key: string, dir: "asc" | "desc") => {
     setSort(key as SortKey)
@@ -84,7 +79,7 @@ export default function RidersPage() {
           <div className="text-sm">
             <p className="font-medium">{r.vehicle.model}</p>
             <p className="text-xs text-muted-foreground">
-              {r.vehicle.plateNumber} · {VEHICLE_LABEL[r.vehicle.type]}
+              {r.vehicle.plateNumber} · {VEHICLE_LABEL}
             </p>
           </div>
         ),
@@ -161,7 +156,7 @@ export default function RidersPage() {
             : { ...prev, status: pending.status }
           : prev
       )
-      fetchRiders({ search: debouncedSearch, approval, status, vehicle, sort, sortDir, page, pageSize })
+      fetchRiders({ search: debouncedSearch, approval, status, sort, sortDir, page, pageSize })
     } catch {
       toast.error("Could not update rider.")
     } finally {
@@ -234,17 +229,6 @@ export default function RidersPage() {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={vehicle} onValueChange={(v) => setVehicle(v as VehicleType | "all")}>
-              <SelectTrigger className="w-32" size="sm">
-                <SelectValue placeholder="Vehicle" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All vehicles</SelectItem>
-                <SelectItem value="motor">Motorcycle</SelectItem>
-                <SelectItem value="sedan">Sedan</SelectItem>
-                <SelectItem value="suv">SUV</SelectItem>
               </SelectContent>
             </Select>
           </>

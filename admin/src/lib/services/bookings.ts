@@ -1,4 +1,4 @@
-import type { Booking, TripStatus } from "@/lib/types"
+import type { Booking, BookingType, TripStatus } from "@/lib/types"
 import { BOOKINGS } from "@/data/mock/generate"
 import { delay } from "./client"
 import type { Paginated } from "./passengers"
@@ -6,7 +6,7 @@ import type { Paginated } from "./passengers"
 export interface BookingQuery {
   search?: string
   status?: TripStatus | "all"
-  vehicle?: "motor" | "sedan" | "suv" | "all"
+  service?: BookingType | "all"
   from?: string
   to?: string
   sort?: "newest" | "oldest" | "fare"
@@ -33,8 +33,8 @@ export const bookingService = {
     if (query.status && query.status !== "all") {
       rows = rows.filter((b) => b.status === query.status)
     }
-    if (query.vehicle && query.vehicle !== "all") {
-      rows = rows.filter((b) => b.vehicle === query.vehicle)
+    if (query.service && query.service !== "all") {
+      rows = rows.filter((b) => (b.bookingType ?? "ride") === query.service)
     }
     if (query.from) {
       const from = +new Date(query.from)

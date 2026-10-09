@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router"
-import { LogOut, Settings as SettingsIcon } from "lucide-react-native"
+import { ArrowLeft, LogOut, Settings as SettingsIcon } from "lucide-react-native"
 import { useEffect, useState } from "react"
-import { View } from "react-native"
+import { Pressable, View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
 import { Avatar, initialsOf } from "@/components/ui/avatar"
@@ -41,8 +41,16 @@ export default function RiderProfile() {
   }
 
   return (
-    <Screen header>
-      <PageHeader title="Rider profile" />
+    <Screen>
+      <View className="flex-row items-center gap-2">
+        <Pressable
+          onPress={() => router.back()}
+          className="size-9 items-center justify-center rounded-full border border-border"
+        >
+          <ArrowLeft size={16} color={colors.foreground} />
+        </Pressable>
+        <PageHeader title="Rider profile" />
+      </View>
 
       <Card>
         <CardHeader className="flex-row items-center gap-3">

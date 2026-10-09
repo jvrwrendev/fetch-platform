@@ -42,7 +42,7 @@ backend/
 | Bookings + trip lifecycle | `store/BookingsContext` and the clock-driven simulation |
 | Fare config + quoting | the **same** `shared/src/fare.ts` engine, run server-side |
 | Maps / routing / geocoding | `frontend/src/services/maps/*` (OSRM demo today) |
-| Payments | the `PaymentMethod` enum's mocked `cash` / `gcash` / `maya` |
+| Payments | the `PaymentMethod` enum's mocked `cash` / `ewallet` |
 
 The fare arithmetic must stay shared: the phone, the browser, and the server
 should all import `shared/src/fare.ts` rather than re-implement it.

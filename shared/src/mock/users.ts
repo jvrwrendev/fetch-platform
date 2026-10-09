@@ -1,4 +1,4 @@
-import type { User, VehicleType } from "../types"
+import type { User } from "../types"
 
 /** Seed accounts for the passenger/rider app's mock login. */
 export const USERS: User[] = [
@@ -19,13 +19,7 @@ export const USERS: User[] = [
     role: "rider",
     rating: 4.9,
     totalTrips: 312,
-    vehicleModel: "Toyota Vios 2022",
+    vehicleModel: "Honda Click 160",
     plateNumber: "ABC 1234",
   },
 ]
-
-export const VEHICLE_LABELS: Record<VehicleType, string> = {
-  motor: "Motor",
-  sedan: "Sedan",
-  suv: "SUV",
-}

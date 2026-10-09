@@ -1,4 +1,4 @@
-import type { DashboardStats, ReportsSummary, TripStatus, VehicleType } from "@/lib/types"
+import type { BookingType, DashboardStats, ReportsSummary, TripStatus } from "@/lib/types"
 import { BOOKINGS, PASSENGERS, RIDERS } from "@/data/mock/generate"
 import { delay } from "./client"
 
@@ -74,11 +74,11 @@ export const reportsService = {
       .map((status) => ({ status, count: inRange.filter((b) => b.status === status).length }))
       .filter((s) => s.count > 0)
 
-    const vehicles: VehicleType[] = ["motor", "sedan", "suv"]
-    const bookingsByVehicle = vehicles.map((vehicle) => {
-      const rows = inRange.filter((b) => b.vehicle === vehicle)
+    const services: BookingType[] = ["ride", "pabili", "padala"]
+    const bookingsByService = services.map((type) => {
+      const rows = inRange.filter((b) => (b.bookingType ?? "ride") === type)
       return {
-        vehicle,
+        type,
         count: rows.length,
         revenue: rows.filter((b) => b.status === "completed").reduce((s, b) => s + b.fare.total, 0),
       }
@@ -128,7 +128,7 @@ export const reportsService = {
     return delay({
       revenueByDay,
       bookingsByStatus,
-      bookingsByVehicle,
+      bookingsByService,
       topRoutes,
       topRiders,
       passengerGrowth,

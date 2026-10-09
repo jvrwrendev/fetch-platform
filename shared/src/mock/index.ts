@@ -1,5 +1,5 @@
 export { LOCATIONS, PH_CITIES } from "./locations"
-export { USERS, VEHICLE_LABELS } from "./users"
+export { USERS } from "./users"
 export { INITIAL_BOOKINGS } from "./bookings"
 export {
   PASSENGERS,

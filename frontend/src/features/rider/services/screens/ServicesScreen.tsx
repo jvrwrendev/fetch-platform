@@ -7,7 +7,7 @@ import { Text } from "@/components/ui/text"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
-import { serviceLabel, VEHICLE_LABELS } from "@/shared"
+import { serviceLabel, VEHICLE_LABEL } from "@/shared"
 import { peso } from "@/utils/format"
 
 export default function RiderRequests() {
@@ -44,7 +44,7 @@ export default function RiderRequests() {
                 {serviceLabel(booking.bookingType, "rider")
                   ? `${serviceLabel(booking.bookingType, "rider")} · `
                   : ""}
-                {VEHICLE_LABELS[booking.vehicle]} · {booking.distanceKm} km ·{" "}
+                {VEHICLE_LABEL} · {booking.distanceKm} km ·{" "}
                 {peso(booking.fare.total)} · {booking.passengerName}
               </Text>
               {booking.items?.length ? (

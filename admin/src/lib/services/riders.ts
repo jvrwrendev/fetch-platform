@@ -7,7 +7,6 @@ export interface RiderQuery {
   search?: string
   approval?: RiderApproval | "all"
   status?: RiderStatus | "all"
-  vehicle?: "motor" | "sedan" | "suv" | "all"
   sort?: "name" | "trips" | "rating" | "joined"
   sortDir?: "asc" | "desc"
   page: number
@@ -34,9 +33,6 @@ export const riderService = {
     }
     if (query.status && query.status !== "all") {
       rows = rows.filter((r) => r.status === query.status)
-    }
-    if (query.vehicle && query.vehicle !== "all") {
-      rows = rows.filter((r) => r.vehicle.type === query.vehicle)
     }
 
     const dir = query.sortDir === "asc" ? -1 : 1

@@ -8,7 +8,7 @@ import { Text } from "@/components/ui/text"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
 import { useThemeColors } from "@/theme"
-import { VEHICLE_LABELS } from "@/shared"
+import { VEHICLE_LABEL } from "@/shared"
 import { peso } from "@/utils/format"
 
 export default function RiderActive() {
@@ -51,7 +51,7 @@ export default function RiderActive() {
           {active.pickup.name} → {active.dropoff.name}
         </Text>
         <Text className="text-xs text-muted-foreground">
-          {VEHICLE_LABELS[active.vehicle]} · {active.distanceKm} km ·{" "}
+          {VEHICLE_LABEL} · {active.distanceKm} km ·{" "}
           {peso(active.fare.total)}
         </Text>
         <Text className="text-xs capitalize text-muted-foreground">

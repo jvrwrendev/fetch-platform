@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Banknote,
   Bike,
-  Car,
   CircleAlert,
   Loader2,
   MapPin,
@@ -11,7 +10,6 @@ import {
   RotateCcw,
   Save,
   Sparkles,
-  Truck,
 } from "lucide-react"
 import {
   Card,
@@ -38,21 +36,21 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { fareService } from "@/lib/services"
 import { distanceKm, quoteFare } from "@/lib/fare"
 import { peso, pesoPrecise } from "@/lib/format"
-import type { FareConfig, VehicleRate, VehicleType } from "@/lib/types"
+import type { FareConfig } from "@/lib/types"
 import { LOCATIONS } from "@/data/mock/locations"
 import { SURGE_MAX, SURGE_MIN, SURGE_STEP } from "@/data/mock/fare"
 
-const VEHICLE_META: Record<
-  VehicleType,
-  { label: string; icon: React.ComponentType<{ className?: string }>; sampleKm: number; sampleNote: string }
-> = {
-  motor: { label: "Motorcycle", icon: Bike, sampleKm: 3, sampleNote: "Short city hop" },
-  sedan: { label: "Sedan", icon: Car, sampleKm: 8, sampleNote: "Cross-town ride" },
-  suv: { label: "SUV", icon: Truck, sampleKm: 15, sampleNote: "Airport / provincial" },
-}
+/** The one vehicle class, with a sample trip for the rate card. */
+const VEHICLE = { label: "Motorcycle", icon: Bike, sampleKm: 5, sampleNote: "Typical city hop" }
 
 const SURGE_LABEL = (value: number) =>
-  value <= 1 ? "Standard (1.0×)" : value < 1.5 ? `Low demand (${value.toFixed(1)}×)` : value < 2.2 ? `Peak (${value.toFixed(1)}×)` : `High surge (${value.toFixed(1)}×)`
+  value <= 1
+    ? "Standard (1.0×)"
+    : value < 1.5
+      ? `Low demand (${value.toFixed(1)}×)`
+      : value < 2.2
+        ? `Peak (${value.toFixed(1)}×)`
+        : `High surge (${value.toFixed(1)}×)`
 
 function parseNum(value: string): number {
   const n = Number(value)
@@ -109,7 +107,6 @@ export default function FareRatesPage() {
   const [busy, setBusy] = useState(false)
   const [resetting, setResetting] = useState(false)
 
-  const [calcVehicle, setCalcVehicle] = useState<VehicleType>("sedan")
   const [pickupIdx, setPickupIdx] = useState<string>("0")
   const [dropoffIdx, setDropoffIdx] = useState<string>("6")
 
@@ -128,11 +125,11 @@ export default function FareRatesPage() {
 
   const invalid = useMemo(() => {
     if (!draft) return false
-    for (const v of ["motor", "sedan", "suv"] as VehicleType[]) {
-      const r = draft.vehicle[v]
-      if (r.base < 0 || r.perKm < 0 || !Number.isFinite(r.base) || !Number.isFinite(r.perKm)) return true
-    }
     return (
+      draft.base < 0 ||
+      draft.perKm < 0 ||
+      !Number.isFinite(draft.base) ||
+      !Number.isFinite(draft.perKm) ||
       draft.bookingFee < 0 ||
       draft.minFare < 0 ||
       draft.surgeMultiplier < SURGE_MIN ||
@@ -145,14 +142,11 @@ export default function FareRatesPage() {
     const pickup = LOCATIONS[Number(pickupIdx)]!
     const dropoff = LOCATIONS[Number(dropoffIdx)]!
     const km = distanceKm(pickup, dropoff)
-    return { pickup, dropoff, km, result: quoteFare(draft, calcVehicle, km) }
-  }, [draft, calcVehicle, pickupIdx, dropoffIdx])
+    return { pickup, dropoff, km, result: quoteFare(draft, km) }
+  }, [draft, pickupIdx, dropoffIdx])
 
-  const patch = (p: Partial<FareConfig>) => setDraft((prev) => (prev ? { ...prev, ...p } : prev))
-  const patchVehicle = (v: VehicleType, p: Partial<VehicleRate>) =>
-    setDraft((prev) =>
-      prev ? { ...prev, vehicle: { ...prev.vehicle, [v]: { ...prev.vehicle[v], ...p } } } : prev
-    )
+  const patch = (p: Partial<FareConfig>) =>
+    setDraft((prev) => (prev ? { ...prev, ...p } : prev))
 
   const handleSave = async () => {
     if (!draft) return
@@ -193,11 +187,14 @@ export default function FareRatesPage() {
     )
   }
 
+  const Icon = VEHICLE.icon
+  const sample = quoteFare(draft, VEHICLE.sampleKm)
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Fare Rates"
-        description="Manage the platform rate card — base fares, per-km rates, fees, and surge."
+        description="Manage the platform rate card — base fare, per-km rate, fees, and surge."
         actions={
           <>
             {dirty && (
@@ -217,50 +214,41 @@ export default function FareRatesPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {(["motor", "sedan", "suv"] as VehicleType[]).map((v) => {
-              const meta = VEHICLE_META[v]
-              const Icon = meta.icon
-              const sample = quoteFare(draft, v, meta.sampleKm)
-              return (
-                <Card key={v} className="py-4">
-                  <CardHeader className="px-4 pb-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Icon className="size-4.5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm">{meta.label}</CardTitle>
-                        <CardDescription className="text-xs">{meta.sampleNote}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3 px-4 pt-4">
-                    <NumberField
-                      id={`${v}-base`}
-                      label="Base fare"
-                      prefix="₱"
-                      value={draft.vehicle[v].base}
-                      onChange={(n) => patchVehicle(v, { base: n })}
-                    />
-                    <NumberField
-                      id={`${v}-perkm`}
-                      label="Per kilometer"
-                      prefix="₱"
-                      value={draft.vehicle[v].perKm}
-                      onChange={(n) => patchVehicle(v, { perKm: n })}
-                    />
-                    <div className="rounded-md bg-muted/60 px-2.5 py-2 text-xs">
-                      <span className="text-muted-foreground">
-                        {meta.sampleKm} km sample ≈{" "}
-                      </span>
-                      <span className="font-semibold">{peso(sample.total)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+          <Card className="py-4">
+            <CardHeader className="px-4 pb-0">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="size-4.5" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm">{VEHICLE.label}</CardTitle>
+                  <CardDescription className="text-xs">{VEHICLE.sampleNote}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-3 px-4 pt-4 sm:grid-cols-2">
+              <NumberField
+                id="base"
+                label="Base fare"
+                prefix="₱"
+                value={draft.base}
+                onChange={(n) => patch({ base: n })}
+              />
+              <NumberField
+                id="perkm"
+                label="Per kilometer"
+                prefix="₱"
+                value={draft.perKm}
+                onChange={(n) => patch({ perKm: n })}
+              />
+              <div className="rounded-md bg-muted/60 px-2.5 py-2 text-xs sm:col-span-2">
+                <span className="text-muted-foreground">
+                  {VEHICLE.sampleKm} km sample ≈{" "}
+                </span>
+                <span className="font-semibold">{peso(sample.total)}</span>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -340,25 +328,6 @@ export default function FareRatesPage() {
             <CardDescription>Live preview of what passengers pay.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Vehicle</Label>
-              <Select
-                value={calcVehicle}
-                onValueChange={(v) => v && setCalcVehicle(v as VehicleType)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["motor", "sedan", "suv"] as VehicleType[]).map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {VEHICLE_META[v].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -415,7 +384,7 @@ export default function FareRatesPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Distance ({quote.km.toFixed(1)} km × {peso(draft.vehicle[calcVehicle].perKm)})
+                      Distance ({quote.km.toFixed(1)} km × {peso(draft.perKm)})
                     </span>
                     <span className="tabular-nums">{pesoPrecise(quote.result.distanceCost)}</span>
                   </div>
@@ -453,7 +422,7 @@ export default function FareRatesPage() {
                 </div>
 
                 <p className="text-[11px] text-muted-foreground">
-                  {quote.pickup.name} → {quote.dropoff.name} · {VEHICLE_META[calcVehicle].label}
+                  {quote.pickup.name} → {quote.dropoff.name} · {VEHICLE.label}
                 </p>
               </>
             )}

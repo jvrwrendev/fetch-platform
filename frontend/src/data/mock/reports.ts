@@ -2,11 +2,11 @@ import {
   BOOKINGS,
   PASSENGERS,
   RIDERS,
+  type BookingType,
   type DashboardStats,
   type ReportsSummary,
   type RevenuePoint,
   type TripStatus,
-  type VehicleType,
 } from "@/shared"
 
 // Deterministic "analytics" derived from the shared mock world. Pure and
@@ -74,11 +74,11 @@ export function buildReports(range = 30): ReportsSummary {
     .map((status) => ({ status, count: inRange.filter((b) => b.status === status).length }))
     .filter((s) => s.count > 0)
 
-  const vehicles: VehicleType[] = ["motor", "sedan", "suv"]
-  const bookingsByVehicle = vehicles.map((vehicle) => {
-    const rows = inRange.filter((b) => b.vehicle === vehicle)
+  const services: BookingType[] = ["ride", "pabili", "padala"]
+  const bookingsByService = services.map((type) => {
+    const rows = inRange.filter((b) => (b.bookingType ?? "ride") === type)
     return {
-      vehicle,
+      type,
       count: rows.length,
       revenue: rows
         .filter((b) => b.status === "completed")
@@ -133,7 +133,7 @@ export function buildReports(range = 30): ReportsSummary {
   return {
     revenueByDay,
     bookingsByStatus,
-    bookingsByVehicle,
+    bookingsByService,
     topRoutes,
     topRiders,
     passengerGrowth,

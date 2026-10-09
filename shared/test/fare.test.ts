@@ -41,7 +41,7 @@ test("distanceKm clamps identical points to the 0.5 km minimum", () => {
 })
 
 test("quoteFare adds base, distance and booking fee with no surge", () => {
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, "motor", 5)
+  const quote = quoteFare(DEFAULT_FARE_CONFIG, 5)
   assert.equal(quote.base, 40)
   assert.equal(quote.distanceCost, 60)
   assert.equal(quote.surgeAdjustment, 0)
@@ -51,55 +51,46 @@ test("quoteFare adds base, distance and booking fee with no surge", () => {
 })
 
 test("quoteFare tops up to the minimum fare", () => {
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, "motor", 0.5)
+  const quote = quoteFare(DEFAULT_FARE_CONFIG, 0.5)
   assert.equal(quote.subtotal, 46)
   assert.equal(quote.minimumTopUp, 4)
   assert.equal(quote.total, 65)
 })
 
 test("quoteFare clamps negative distance to zero", () => {
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, "suv", -5)
+  const quote = quoteFare(DEFAULT_FARE_CONFIG, -5)
   assert.equal(quote.distanceCost, 0)
-  assert.equal(quote.total, 105)
+  assert.equal(quote.subtotal, 40)
+  assert.equal(quote.minimumTopUp, 10)
+  assert.equal(quote.total, 65)
 })
 
 test("quoteFare applies the surge multiplier to the subtotal", () => {
   const quote = quoteFare(
     { ...DEFAULT_FARE_CONFIG, surgeMultiplier: 1.5 },
-    "sedan",
     10
   )
-  assert.equal(quote.subtotal, 240)
-  assert.equal(quote.surgeAdjustment, 120)
-  assert.equal(quote.total, 375)
-})
-
-test("vehicles are priced motor < sedan < suv for the same distance", () => {
-  const motor = quoteFare(DEFAULT_FARE_CONFIG, "motor", 5).total
-  const sedan = quoteFare(DEFAULT_FARE_CONFIG, "sedan", 5).total
-  const suv = quoteFare(DEFAULT_FARE_CONFIG, "suv", 5).total
-  assert.equal(motor, 115)
-  assert.equal(sedan, 165)
-  assert.equal(suv, 230)
-  assert.ok(motor < sedan && sedan < suv)
+  assert.equal(quote.subtotal, 160)
+  assert.equal(quote.surgeAdjustment, 80)
+  assert.equal(quote.total, 255)
 })
 
 test("estimateFare matches quoteFare over the rounded distance", () => {
-  const estimate = estimateFare(NEAR, FAR, "sedan")
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, "sedan", distanceKm(NEAR, FAR))
+  const estimate = estimateFare(NEAR, FAR)
+  const quote = quoteFare(DEFAULT_FARE_CONFIG, distanceKm(NEAR, FAR))
   assert.deepEqual(estimate, quote)
 })
 
 test("estimateFare costs more for a longer trip", () => {
-  const near = estimateFare(ORIGIN, NEAR, "motor")
-  const far = estimateFare(ORIGIN, FAR, "motor")
+  const near = estimateFare(ORIGIN, NEAR)
+  const far = estimateFare(ORIGIN, FAR)
   assert.ok(far.total > near.total)
   assert.ok(far.distanceCost >= near.distanceCost)
 })
 
 test("surge overrides do not mutate the default config", () => {
   const before = DEFAULT_FARE_CONFIG.surgeMultiplier
-  quoteFare({ ...DEFAULT_FARE_CONFIG, surgeMultiplier: 1.5 }, "motor", 5)
+  quoteFare({ ...DEFAULT_FARE_CONFIG, surgeMultiplier: 1.5 }, 5)
   assert.equal(DEFAULT_FARE_CONFIG.surgeMultiplier, before)
 })
 
@@ -137,8 +128,8 @@ test("estimateErrandFare matches quoteErrand over the rounded distance", () => {
   assert.deepEqual(estimate, quote)
 })
 
-test("errands are cheaper than nothing but priced on their own tariff", () => {
-  const ride = estimateFare(NEAR, FAR, "motor")
+test("errands are priced on their own tariff", () => {
+  const ride = estimateFare(NEAR, FAR)
   const errand = estimateErrandFare(NEAR, FAR, "pabili")
   assert.ok(errand.total > ride.total)
   assert.equal(errand.bookingType, "pabili")

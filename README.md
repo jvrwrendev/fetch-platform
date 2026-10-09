@@ -83,16 +83,20 @@ admin fare editor and the passenger app's quote both go through `estimateFare` /
 
 - **Passenger** — landing page, demo sign-in, and one booking flow that opens
   with a service choice: **Book ride**, **Pabili** (buy it for me) or **Pasugo**
-  (pick it up and deliver it). Each runs the same live trip (`searching →
+  (pick it up and deliver it). Fares are motorcycle-only and settle by **Cash**
+  or **E-Wallet**. Each service runs the same live trip (`searching →
   accepted → arriving → in_progress → completed`) with an animated rider
-  marker, ETA, cancellation, receipt and a star rating, plus trip history,
-  profile and a settings screen (notifications, default payment, saved places,
-  service area, appearance). Pabili and Pasugo are the local errands: the rider
-  shops or collects on the passenger's behalf and the receipt carries the
-  shopping list and, for Pasugo, the recipient.
+  marker, ETA, cancellation, receipt and a star rating, plus trip history and
+  savings (notifications, default payment, saved places, service area,
+  appearance) under the header account menu. Pabili and Pasugo are the local
+  errands: the rider shops or collects on the passenger's behalf and the receipt
+  carries the shopping list and, for Pasugo, the recipient.
 - **Rider** — go online, see open requests, accept/decline, advance a trip
-  through its stages, earnings and history, plus a settings screen
-  (availability, notifications, vehicle, service area, appearance).
+  through its stages, earnings and history, plus settings (availability,
+  notifications, vehicle, service area, appearance) under the account menu.
+- **Top bar** — every tabbed screen carries the brand, a **notification bell**
+  with an unread badge, and the **account avatar** (Profile, Settings, sign out),
+  so the bottom bar is left to the work itself.
 - **Admin** (`admin/`, browser) — dashboard stats and charts, passengers, riders,
   bookings, fare rates, a Leaflet live map, reports, notifications, profile and
   settings, all reading the same mock world.

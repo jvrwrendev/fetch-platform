@@ -3,7 +3,7 @@ import { View } from "react-native"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { VEHICLE_LABELS, serviceLabel, type Booking } from "@/shared"
+import { VEHICLE_LABEL, serviceLabel, type Booking } from "@/shared"
 import { peso, shortDate } from "@/utils/format"
 import { StatusBadge } from "@/components/StatusBadge"
 
@@ -16,7 +16,7 @@ export default function BookingCard({ booking }: { booking: Booking }) {
             {booking.pickup.name} → {booking.dropoff.name}
           </Text>
           <Text className="text-xs text-muted-foreground">
-            {VEHICLE_LABELS[booking.vehicle]} · {booking.distanceKm} km ·{" "}
+            {VEHICLE_LABEL} · {booking.distanceKm} km ·{" "}
             {shortDate(booking.createdAt)}
           </Text>
           {booking.riderName ? (

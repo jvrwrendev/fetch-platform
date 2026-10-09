@@ -5,7 +5,6 @@ import type {
   Passenger,
   Rider,
   TripStatus,
-  VehicleType,
 } from "../types"
 import { DEFAULT_FARE_CONFIG } from "../fare"
 import { LOCATIONS, PH_CITIES } from "./locations"
@@ -56,16 +55,8 @@ const MOTOR_MODELS = [
   "Honda BeAT", "Honda Click 160", "Yamaha Mio", "Suzuki Skydrive",
   "Honda TMX 125", "KawasakiBarako II",
 ]
-const SEDAN_MODELS = [
-  "Toyota Vios 2022", "Toyota Vios 2023", "Honda City 2021", "Mitsubishi Mirage G4",
-  "Toyota Corolla Altis 2020", "Nissan Almera 2022",
-]
-const SUV_MODELS = [
-  "Toyota Innova 2023", "Toyota Fortuner 2022", "Mitsubishi Montero Sport 2021",
-  "Honda CR-V 2023", "Toyota Hilux 2022", "Ford Everest 2023",
-]
 
-const PAYMENTS: Booking["paymentMethod"][] = ["cash", "gcash", "maya", "cash", "gcash"]
+const PAYMENTS: Booking["paymentMethod"][] = ["cash", "ewallet", "cash", "ewallet"]
 
 function slug(name: string, index: number): string {
   const base = name
@@ -108,7 +99,7 @@ function jitter(point: GeoPoint): GeoPoint {
   }
 }
 
-const VEHICLE_RATES = DEFAULT_FARE_CONFIG.vehicle
+const VEHICLE_RATES = DEFAULT_FARE_CONFIG
 
 export const PASSENGERS: Passenger[] = Array.from({ length: 60 }, (_, i) => {
   const name = `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`
@@ -144,7 +135,6 @@ export const RIDERS: Rider[] = Array.from({ length: 40 }, (_, i) => {
           : "inactive"
   const totalTrips = intBetween(15, 950)
   const cancels = Math.round(totalTrips * (rand() * 0.08))
-  const vehicleType: VehicleType = pick(["motor", "motor", "sedan", "sedan", "suv"])
   const availRoll = rand()
   return {
     id: `R${String(2001 + i)}`,
@@ -166,13 +156,7 @@ export const RIDERS: Rider[] = Array.from({ length: 40 }, (_, i) => {
     completedTrips: totalTrips - cancels,
     cancelRate: Math.round((cancels / Math.max(totalTrips, 1)) * 1000) / 10,
     vehicle: {
-      type: vehicleType,
-      model:
-        vehicleType === "motor"
-          ? pick(MOTOR_MODELS)
-          : vehicleType === "sedan"
-            ? pick(SEDAN_MODELS)
-            : pick(SUV_MODELS),
+      model: pick(MOTOR_MODELS),
       plateNumber: plate(),
     },
     licenseNumber: license(),
@@ -217,7 +201,6 @@ export const BOOKINGS: Booking[] = Array.from({ length: 150 }, (_, i) => {
   const pickup = pick(LOCATIONS)
   let dropoff = pick(LOCATIONS)
   while (dropoff.name === pickup.name) dropoff = pick(LOCATIONS)
-  const vehicle: VehicleType = rider ? rider.vehicle.type : pick(["motor", "sedan", "suv"])
 
   const R = 6371
   const toRad = (d: number) => (d * Math.PI) / 180
@@ -228,7 +211,7 @@ export const BOOKINGS: Booking[] = Array.from({ length: 150 }, (_, i) => {
     Math.cos(toRad(pickup.lat)) * Math.cos(toRad(dropoff.lat)) * Math.sin(dLng / 2) ** 2
   const distanceKm = Math.max(Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10, 0.8)
 
-  const rate = VEHICLE_RATES[vehicle]
+  const rate = VEHICLE_RATES
   const baseCost = rate.base
   const distanceCost = Math.round(distanceKm * rate.perKm)
   const total = status === "cancelled" ? 0 : baseCost + distanceCost
@@ -247,7 +230,6 @@ export const BOOKINGS: Booking[] = Array.from({ length: 150 }, (_, i) => {
     passengerName: passenger.name,
     riderId: rider?.id,
     riderName: rider?.name,
-    vehicle,
     pickup,
     dropoff,
     distanceKm,

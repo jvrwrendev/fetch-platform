@@ -27,7 +27,7 @@ import { DataTable, type DataTableColumn } from "@/components/shared/DataTable"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { UserCell } from "@/components/shared/UserCell"
 import { useBookings } from "./BookingsContext"
-import type { Booking, TripStatus, VehicleType } from "@/lib/types"
+import type { Booking, BookingType, TripStatus } from "@/lib/types"
 import { formatDateTime, peso, pesoPrecise } from "@/lib/format"
 import { useDebounce } from "@/hooks/use-debounce"
 
@@ -42,24 +42,25 @@ const TRIP_STATUS_OPTIONS: TripStatus[] = [
   "cancelled",
 ]
 
-const VEHICLE_LABEL: Record<VehicleType, string> = {
-  motor: "Motorcycle",
-  sedan: "Sedan",
-  suv: "SUV",
+const SERVICE_LABEL: Record<BookingType, string> = {
+  ride: "Ride",
+  pabili: "Pabili",
+  padala: "Pasugo",
 }
 
 const PAYMENT_LABEL: Record<Booking["paymentMethod"], string> = {
   cash: "Cash",
-  gcash: "GCash",
-  maya: "Maya",
+  ewallet: "E-Wallet",
 }
+
+const SERVICE_OPTIONS: BookingType[] = ["ride", "pabili", "padala"]
 
 export default function BookingsPage() {
   const { data, loading, error, fetchBookings } = useBookings()
 
   const [search, setSearch] = useState("")
   const [status, setStatusFilter] = useState<TripStatus | "all">("all")
-  const [vehicle, setVehicle] = useState<VehicleType | "all">("all")
+  const [service, setService] = useState<BookingType | "all">("all")
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined)
   const [toDate, setToDate] = useState<Date | undefined>(undefined)
   const [sort, setSort] = useState<SortKey>("newest")
@@ -71,13 +72,13 @@ export default function BookingsPage() {
   const pageSize = 10
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, status, vehicle, fromDate, toDate, sort, sortDir])
+  }, [debouncedSearch, status, service, fromDate, toDate, sort, sortDir])
 
   useEffect(() => {
     fetchBookings({
       search: debouncedSearch,
       status,
-      vehicle,
+      service,
       from: fromDate?.toISOString(),
       to: toDate ? new Date(toDate.getTime() + 86_399_999).toISOString() : undefined,
       sort,
@@ -89,7 +90,7 @@ export default function BookingsPage() {
     fetchBookings,
     debouncedSearch,
     status,
-    vehicle,
+    service,
     fromDate,
     toDate,
     sort,
@@ -154,7 +155,7 @@ export default function BookingsPage() {
           <div className="text-right">
             <p className="font-medium tabular-nums">{peso(b.fare.total)}</p>
             <p className="text-xs text-muted-foreground">
-              {b.distanceKm.toFixed(1)} km · {VEHICLE_LABEL[b.vehicle]}
+              {b.distanceKm.toFixed(1)} km · {SERVICE_LABEL[b.bookingType ?? "ride"]}
             </p>
           </div>
         ),
@@ -170,7 +171,7 @@ export default function BookingsPage() {
 
   const activeFilters = [
     status !== "all",
-    vehicle !== "all",
+    service !== "all",
     !!fromDate,
     !!toDate,
   ].filter(Boolean).length
@@ -224,15 +225,17 @@ export default function BookingsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={vehicle} onValueChange={(v) => setVehicle(v as VehicleType | "all")}>
+            <Select value={service} onValueChange={(v) => setService(v as BookingType | "all")}>
               <SelectTrigger className="w-32" size="sm">
-                <SelectValue placeholder="Vehicle" />
+                <SelectValue placeholder="Service" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All vehicles</SelectItem>
-                <SelectItem value="motor">Motorcycle</SelectItem>
-                <SelectItem value="sedan">Sedan</SelectItem>
-                <SelectItem value="suv">SUV</SelectItem>
+                <SelectItem value="all">All services</SelectItem>
+                {SERVICE_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {SERVICE_LABEL[s]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Popover>
@@ -295,7 +298,7 @@ export default function BookingsPage() {
                 size="sm"
                 onClick={() => {
                   setStatusFilter("all")
-                  setVehicle("all")
+                  setService("all")
                   setFromDate(undefined)
                   setToDate(undefined)
                 }}
@@ -355,7 +358,7 @@ export default function BookingsPage() {
                       <Navigation className="size-3.5" />
                       {selected.distanceKm.toFixed(1)} km
                     </span>
-                    <span>{VEHICLE_LABEL[selected.vehicle]}</span>
+                    <span>{SERVICE_LABEL[selected.bookingType ?? "ride"]}</span>
                     <span>{PAYMENT_LABEL[selected.paymentMethod]}</span>
                     {selected.completedAt && <span>Ended {formatDateTime(selected.completedAt)}</span>}
                   </div>

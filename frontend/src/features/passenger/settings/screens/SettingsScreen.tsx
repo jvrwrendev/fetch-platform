@@ -19,8 +19,7 @@ import { cn } from "@/utils/cn"
 
 const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
-  gcash: "GCash",
-  maya: "Maya",
+  ewallet: "E-Wallet",
 }
 
 export default function PassengerSettings() {

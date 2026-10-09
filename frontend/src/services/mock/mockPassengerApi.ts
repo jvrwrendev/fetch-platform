@@ -6,7 +6,6 @@ import {
   type FareConfig,
   type FareQuote,
   type GeoPoint,
-  type VehicleType,
 } from "@/shared"
 import type { NewBookingInput, PassengerApi } from "@/services/api"
 
@@ -26,7 +25,7 @@ export const mockPassengerApi: PassengerApi = {
         : null
     const ride = errand
       ? null
-      : estimateFare(input.pickup, input.dropoff, input.vehicle)
+      : estimateFare(input.pickup, input.dropoff)
     const quote = errand ?? ride!
     const fare = errand
       ? {
@@ -55,7 +54,6 @@ export const mockPassengerApi: PassengerApi = {
   estimateFare: (
     pickup: GeoPoint,
     dropoff: GeoPoint,
-    vehicle: VehicleType,
     config?: FareConfig
-  ): Promise<FareQuote> => delay(estimateFare(pickup, dropoff, vehicle, config)),
+  ): Promise<FareQuote> => delay(estimateFare(pickup, dropoff, config)),
 }

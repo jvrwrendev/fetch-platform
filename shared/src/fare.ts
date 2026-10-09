@@ -1,11 +1,12 @@
-import type { BookingType, FareConfig, FareQuote, GeoPoint, PaymentMethod, VehicleType } from "./types"
+import type { BookingType, FareConfig, FareQuote, GeoPoint, PaymentMethod } from "./types"
 
+/**
+ * The motorcycle tariff. FETCH runs motorcycle taxis only, so there is one
+ * rate rather than a rate per vehicle class.
+ */
 export const DEFAULT_FARE_CONFIG: FareConfig = {
-  vehicle: {
-    motor: { base: 40, perKm: 12 },
-    sedan: { base: 60, perKm: 18 },
-    suv: { base: 90, perKm: 25 },
-  },
+  base: 40,
+  perKm: 12,
   bookingFee: 15,
   minFare: 50,
   surgeMultiplier: 1,
@@ -15,7 +16,7 @@ export const SURGE_MIN = 1
 export const SURGE_MAX = 3
 export const SURGE_STEP = 0.1
 
-export const PAYMENT_METHODS: PaymentMethod[] = ["cash", "gcash", "maya"]
+export const PAYMENT_METHODS: PaymentMethod[] = ["cash", "ewallet"]
 
 export function haversineKm(a: GeoPoint, b: GeoPoint): number {
   const R = 6371
@@ -32,14 +33,9 @@ export function distanceKm(pickup: GeoPoint, dropoff: GeoPoint): number {
   return Math.round(Math.max(haversineKm(pickup, dropoff), 0.5) * 10) / 10
 }
 
-export function quoteFare(
-  config: FareConfig,
-  vehicle: VehicleType,
-  km: number
-): FareQuote {
-  const rate = config.vehicle[vehicle]
-  const base = rate.base
-  const distanceCost = Math.round(Math.max(km, 0) * rate.perKm)
+export function quoteFare(config: FareConfig, km: number): FareQuote {
+  const base = config.base
+  const distanceCost = Math.round(Math.max(km, 0) * config.perKm)
   const subtotal = base + distanceCost
   const surgeAdjustment = Math.round(subtotal * (config.surgeMultiplier - 1))
   const afterSurge = subtotal + surgeAdjustment
@@ -48,7 +44,6 @@ export function quoteFare(
   const total = Math.round(afterSurge + minimumTopUp + bookingFee)
 
   return {
-    vehicle,
     distanceKm: Math.round(Math.max(km, 0) * 10) / 10,
     base,
     distanceCost,
@@ -64,10 +59,9 @@ export function quoteFare(
 export function estimateFare(
   pickup: GeoPoint,
   dropoff: GeoPoint,
-  vehicle: VehicleType,
   config: FareConfig = DEFAULT_FARE_CONFIG
 ): FareQuote {
-  return quoteFare(config, vehicle, distanceKm(pickup, dropoff))
+  return quoteFare(config, distanceKm(pickup, dropoff))
 }
 
 /** The errand half of {@link BookingType}: pabili and pasugo (padala). */

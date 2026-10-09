@@ -14,7 +14,7 @@ import { useBookings } from "@/store/BookingsContext"
 import {
   pointAlong,
   serviceLabel,
-  VEHICLE_LABELS,
+  VEHICLE_LABEL,
   type LatLng,
   type TripStatus,
 } from "@/shared"
@@ -134,7 +134,7 @@ export default function TripStatusScreen() {
           <Text className="text-sm font-medium">{etaText}</Text>
           {booking.riderName ? (
             <Text className="text-xs text-muted-foreground">
-              {booking.riderName} · {VEHICLE_LABELS[booking.vehicle]}
+              {booking.riderName} · {VEHICLE_LABEL}
             </Text>
           ) : null}
           <View className="mt-3 gap-2">

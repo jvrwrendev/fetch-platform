@@ -23,6 +23,4 @@ export type {
   Role,
   TripStatus,
   User,
-  VehicleRate,
-  VehicleType,
 } from "@/shared"

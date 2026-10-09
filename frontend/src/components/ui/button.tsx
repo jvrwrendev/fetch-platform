@@ -7,7 +7,7 @@ import {
   type PressableProps,
 } from "react-native"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/cn"
 
 const buttonVariants = cva(
   "flex-row items-center justify-center gap-2 rounded-md",

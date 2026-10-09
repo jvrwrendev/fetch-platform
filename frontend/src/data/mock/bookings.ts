@@ -1,0 +1,6 @@
+export {
+  BOOKINGS,
+  INITIAL_BOOKINGS,
+  SAMPLE_DROPOFF,
+  SAMPLE_PICKUP,
+} from "@/shared"

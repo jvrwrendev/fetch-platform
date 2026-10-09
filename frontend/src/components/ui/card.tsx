@@ -2,7 +2,7 @@ import * as React from "react"
 import { View, type ViewProps } from "react-native"
 
 import { Text } from "@/components/ui/text"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/cn"
 
 export function Card({ className, ...props }: ViewProps & { className?: string }) {
   return (

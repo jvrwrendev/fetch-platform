@@ -3,6 +3,8 @@ node_modules/
 dist/
 web-build/
 *.log
+.env
+!.env.example
 .DS_Store
 android/
 ios/

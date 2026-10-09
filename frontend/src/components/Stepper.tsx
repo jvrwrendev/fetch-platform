@@ -2,7 +2,7 @@ import { Check } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { Text } from "@/components/ui/text"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/cn"
 
 export default function Stepper({
   steps,

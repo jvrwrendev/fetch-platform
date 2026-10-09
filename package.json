@@ -4,15 +4,14 @@
   "version": "0.0.0",
   "workspaces": [
     "shared",
-    "admin"
+    "backend"
   ],
   "scripts": {
-    "dev:admin": "npm run dev -w admin",
-    "build:admin": "npm run build -w admin",
     "dev:mobile": "npm --prefix frontend run start",
     "dev:mobile:web": "npm --prefix frontend run web",
     "build:mobile": "npm --prefix frontend run export:web",
     "typecheck:mobile": "npm --prefix frontend run typecheck",
+    "typecheck:backend": "npm run typecheck -w backend",
     "install:mobile": "npm --prefix frontend install",
     "install:all": "npm install && npm --prefix frontend install"
   }

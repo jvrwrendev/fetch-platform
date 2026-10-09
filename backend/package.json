@@ -1,0 +1,14 @@
+{
+  "name": "@fetch/backend",
+  "private": true,
+  "version": "0.0.0",
+  "description": "FETCH API skeleton (mock-only build — no server runs yet).",
+  "type": "commonjs",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}

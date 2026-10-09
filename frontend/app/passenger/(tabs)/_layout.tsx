@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router"
-import { History, Home, MapPin, User } from "lucide-react-native"
+import { Car, History, Home, MapPin, User } from "lucide-react-native"
 
 export default function PassengerTabs() {
   return (
@@ -13,19 +13,24 @@ export default function PassengerTabs() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="book"
+        name="services"
+        options={{
+          title: "Services",
+          tabBarIcon: ({ color, size }) => <Car color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="booking"
         options={{
           title: "Book",
-          tabBarIcon: ({ color, size }) => (
-            <MapPin color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <MapPin color={color} size={size} />,
         }}
       />
       <Tabs.Screen

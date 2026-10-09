@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { Avatar, initialsOf } from "@/components/ui/avatar"
 import { Text } from "@/components/ui/text"
-import { useAuth } from "@/features/auth/AuthContext"
+import { useAuth } from "@/store/AuthContext"
 
 /**
  * The persistent bar the original web shell had: brand on the left, the signed

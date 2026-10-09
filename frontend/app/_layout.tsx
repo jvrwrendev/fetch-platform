@@ -4,8 +4,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { ToastHost } from "@/components/ui/toast"
-import { AuthProvider } from "@/features/auth/AuthContext"
-import { BookingsProvider } from "@/features/bookings/BookingsContext"
+import { AuthProvider } from "@/store/AuthContext"
+import { BookingsProvider } from "@/store/BookingsContext"
 
 export default function RootLayout() {
   return (

@@ -13,14 +13,14 @@ export default function RiderTabs() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="requests"
+        name="services"
         options={{
           title: "Requests",
           tabBarIcon: ({ color, size }) => (
@@ -29,7 +29,7 @@ export default function RiderTabs() {
         }}
       />
       <Tabs.Screen
-        name="active"
+        name="active-trip"
         options={{
           title: "Trip",
           tabBarIcon: ({ color, size }) => (

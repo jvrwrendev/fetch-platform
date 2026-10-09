@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
-import { useAuth } from "@/features/auth/AuthContext"
+import { useAuth } from "@/store/AuthContext"
 
 export default function Landing() {
   const { user, ready } = useAuth()
@@ -15,7 +15,7 @@ export default function Landing() {
 
   const go = () => {
     if (user) {
-      router.push(user.role === "rider" ? "/rider" : "/passenger")
+      router.push(user.role === "rider" ? "/rider/dashboard" : "/passenger/dashboard")
     } else {
       router.push("/login")
     }
@@ -55,7 +55,8 @@ export default function Landing() {
               icon={<ShieldCheck size={18} color="#171717" />}
               title="Transparent fares"
             >
-              One fare engine shared with the web app and the admin console.
+              One fare engine shared across the passenger, rider and admin
+              experiences.
             </Feature>
           </Animated.View>
 
@@ -72,6 +73,12 @@ export default function Landing() {
                 Use a demo account
               </Button>
             ) : null}
+            <Button
+              variant="ghost"
+              onPress={() => router.push("/admin/dashboard")}
+            >
+              Admin console
+            </Button>
           </Animated.View>
         </View>
       </ScrollView>

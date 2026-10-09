@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Text } from "@/components/ui/text"
-import { useAuth } from "@/features/auth/AuthContext"
+import { useAuth } from "@/store/AuthContext"
 import type { Role } from "@/shared"
 
 export default function Login() {
@@ -25,7 +25,7 @@ export default function Login() {
 
   const signIn = (role: Role) => {
     login(role)
-    router.replace(role === "rider" ? "/rider" : "/passenger")
+    router.replace(role === "rider" ? "/rider/dashboard" : "/passenger/dashboard")
   }
 
   return (

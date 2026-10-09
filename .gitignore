@@ -1,4 +1,9 @@
 node_modules/
 dist/
+web-build/
+.expo/
+*.log
 *.local
+.env
+!.env.example
 .DS_Store

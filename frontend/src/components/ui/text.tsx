@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Text as RNText, type TextProps as RNTextProps } from "react-native"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/cn"
 
 export interface TextProps extends RNTextProps {
   className?: string

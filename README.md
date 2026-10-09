@@ -30,7 +30,7 @@ frontend/
 ├── app/                     # Expo Router routes (thin re-exports)
 │   ├── index.tsx            #   landing
 │   ├── login.tsx            #   demo sign-in
-│   ├── passenger/           #   dashboard/services/booking/tracking/history/profile
+│   ├── passenger/           #   dashboard/booking/tracking/history/profile
 │   └── rider/               #   dashboard/services/active-trip/history/profile
 └── src/
     ├── components/          #   shadcn-style UI + MapView/ServiceCard/BookingCard/…
@@ -81,9 +81,14 @@ admin fare editor and the passenger app's quote both go through `estimateFare` /
 
 ## What's in the app
 
-- **Passenger** — landing page, demo sign-in, book a ride (pickup → drop-off →
-  review), live trip with an animated rider marker, ETA, cancellation, receipt
-  and a star rating, plus a ride-type catalog, trip history and profile.
+- **Passenger** — landing page, demo sign-in, and one booking flow that opens
+  with a service choice: **Book ride**, **Pabili** (buy it for me) or **Pasugo**
+  (pick it up and deliver it). Each runs the same live trip (`searching →
+  accepted → arriving → in_progress → completed`) with an animated rider
+  marker, ETA, cancellation, receipt and a star rating, plus trip history and
+  profile. Pabili and Pasugo are the local errands: the rider shops or collects
+  on the passenger's behalf and the receipt carries the shopping list and, for
+  Pasugo, the recipient.
 - **Rider** — go online, see open requests, accept/decline, advance a trip
   through its stages, earnings and history.
 - **Admin** (`admin/`, browser) — dashboard stats and charts, passengers, riders,

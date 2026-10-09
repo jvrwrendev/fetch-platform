@@ -2,10 +2,13 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  DEFAULT_ERRAND_FARE_CONFIG,
   DEFAULT_FARE_CONFIG,
   distanceKm,
+  estimateErrandFare,
   estimateFare,
   haversineKm,
+  quoteErrand,
   quoteFare,
 } from "../src/fare.ts"
 import type { GeoPoint } from "../src/types.ts"
@@ -98,4 +101,45 @@ test("surge overrides do not mutate the default config", () => {
   const before = DEFAULT_FARE_CONFIG.surgeMultiplier
   quoteFare({ ...DEFAULT_FARE_CONFIG, surgeMultiplier: 1.5 }, "motor", 5)
   assert.equal(DEFAULT_FARE_CONFIG.surgeMultiplier, before)
+})
+
+test("quoteErrand adds base, distance and the stop fee", () => {
+  const quote = quoteErrand("pabili", 4)
+  assert.equal(quote.base, 60)
+  assert.equal(quote.distanceCost, 48)
+  assert.equal(quote.stopFee, 25)
+  assert.equal(quote.subtotal, 133)
+  assert.equal(quote.minimumTopUp, 0)
+  assert.equal(quote.bookingFee, 15)
+  assert.equal(quote.total, 148)
+})
+
+test("quoteErrand clamps negative distance to zero", () => {
+  const quote = quoteErrand("padala", -3)
+  assert.equal(quote.distanceCost, 0)
+  assert.equal(quote.subtotal, 85)
+  assert.equal(quote.total, 100)
+})
+
+test("quoteErrand tops up to the errand minimum", () => {
+  const quote = quoteErrand("pabili", 1, {
+    ...DEFAULT_ERRAND_FARE_CONFIG,
+    minFare: 200,
+  })
+  assert.equal(quote.subtotal, 97)
+  assert.equal(quote.minimumTopUp, 103)
+  assert.equal(quote.total, 215)
+})
+
+test("estimateErrandFare matches quoteErrand over the rounded distance", () => {
+  const estimate = estimateErrandFare(NEAR, FAR, "padala")
+  const quote = quoteErrand("padala", distanceKm(NEAR, FAR))
+  assert.deepEqual(estimate, quote)
+})
+
+test("errands are cheaper than nothing but priced on their own tariff", () => {
+  const ride = estimateFare(NEAR, FAR, "motor")
+  const errand = estimateErrandFare(NEAR, FAR, "pabili")
+  assert.ok(errand.total > ride.total)
+  assert.equal(errand.bookingType, "pabili")
 })

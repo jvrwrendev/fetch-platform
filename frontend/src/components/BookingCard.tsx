@@ -3,7 +3,7 @@ import { View } from "react-native"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { VEHICLE_LABELS, type Booking } from "@/shared"
+import { VEHICLE_LABELS, serviceLabel, type Booking } from "@/shared"
 import { peso, shortDate } from "@/utils/format"
 import { StatusBadge } from "@/components/StatusBadge"
 
@@ -24,8 +24,13 @@ export default function BookingCard({ booking }: { booking: Booking }) {
               Rider: {booking.riderName}
             </Text>
           ) : null}
-          <View className="mt-1">
+          <View className="mt-1 flex-row items-center gap-2">
             <StatusBadge status={booking.status} />
+            {serviceLabel(booking.bookingType, "commuter") ? (
+              <Badge variant="secondary">
+                {serviceLabel(booking.bookingType, "commuter")}
+              </Badge>
+            ) : null}
           </View>
         </View>
         {booking.fare.total > 0 ? (

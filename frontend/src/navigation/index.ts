@@ -7,7 +7,6 @@ export const routes = {
   login: "/login",
   passenger: {
     dashboard: "/passenger/dashboard",
-    services: "/passenger/services",
     booking: "/passenger/booking",
     tracking: "/passenger/tracking",
     history: "/passenger/history",

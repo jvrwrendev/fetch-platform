@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/toast"
 import { useBookings } from "@/store/BookingsContext"
 import {
   pointAlong,
+  serviceLabel,
   VEHICLE_LABELS,
   type LatLng,
   type TripStatus,
@@ -107,6 +108,27 @@ export default function RiderTrip() {
           <Row label="Pickup" value={booking.pickup.name} />
           <Row label="Drop-off" value={booking.dropoff.name} />
           <Row label="Vehicle" value={VEHICLE_LABELS[booking.vehicle]} />
+          {serviceLabel(booking.bookingType, "rider") ? (
+            <Row
+              label="Service"
+              value={serviceLabel(booking.bookingType, "rider")}
+            />
+          ) : null}
+          {booking.items?.length ? (
+            <Row
+              label="Items"
+              value={booking.items
+                .map((item) => `${item.qty}× ${item.name}`)
+                .join(", ")}
+            />
+          ) : null}
+          {booking.recipientName ? (
+            <Row label="Recipient" value={booking.recipientName} />
+          ) : null}
+          {booking.recipientPhone ? (
+            <Row label="Recipient phone" value={booking.recipientPhone} />
+          ) : null}
+          {booking.notes ? <Row label="Notes" value={booking.notes} /> : null}
           <Row label="Distance" value={`${booking.distanceKm} km`} />
           <View className="flex-row items-center justify-between border-t border-border pt-2">
             <Text className="text-sm font-medium">Earnings</Text>

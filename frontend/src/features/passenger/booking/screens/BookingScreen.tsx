@@ -16,10 +16,19 @@ import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
 import { useRoute } from "@/hooks/useRoute"
 import {
+  BOOKING_TYPE_CTA,
+  BOOKING_TYPE_DESCRIPTION,
+  BOOKING_TYPE_TITLE,
   LOCATIONS,
   PAYMENT_METHODS,
   VEHICLE_LABELS,
+  estimateErrandFare,
   estimateFare,
+  resolveBookingType,
+  type Booking,
+  type BookingErrandItem,
+  type BookingType,
+  type ErrandType,
   type GeoPoint,
   type PaymentMethod,
   type VehicleType,
@@ -28,7 +37,14 @@ import { mapColors } from "@/theme/colors"
 import { useThemeColors } from "@/theme"
 import { peso } from "@/utils/format"
 
-const STEPS = ["Pickup", "Drop-off", "Confirm"]
+import { ErrandFields } from "../components/ErrandFields"
+import { ServiceTypePicker } from "../components/ServiceTypePicker"
+
+const STEPS_BY_TYPE: Record<BookingType, string[]> = {
+  ride: ["Pickup", "Drop-off", "Confirm"],
+  pabili: ["Store", "Deliver", "Confirm"],
+  padala: ["Pickup", "Deliver", "Confirm"],
+}
 const VEHICLES: VehicleType[] = ["motor", "sedan", "suv"]
 const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
@@ -49,22 +65,43 @@ export default function BookRide() {
   const { user } = useAuth()
   const { createBooking } = useBookings()
   const router = useRouter()
-  const { vehicle: vehicleParam } = useLocalSearchParams<{ vehicle?: string }>()
+  const { vehicle: vehicleParam, type: typeParam } = useLocalSearchParams<{
+    vehicle?: string
+    type?: string
+  }>()
   const initialVehicle = VEHICLES.includes(vehicleParam as VehicleType)
     ? (vehicleParam as VehicleType)
     : "sedan"
+  const [bookingType, setBookingType] = useState<BookingType>(() =>
+    resolveBookingType(typeParam)
+  )
   const [step, setStep] = useState(0)
   const [pickup, setPickup] = useState<GeoPoint | null>(null)
   const [dropoff, setDropoff] = useState<GeoPoint | null>(null)
   const [vehicle, setVehicle] = useState<VehicleType>(initialVehicle)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
   const [locating, setLocating] = useState(false)
+  const [items, setItems] = useState<BookingErrandItem[]>([])
+  const [itemBudget, setItemBudget] = useState("")
+  const [recipientName, setRecipientName] = useState("")
+  const [recipientPhone, setRecipientPhone] = useState("")
+  const [notes, setNotes] = useState("")
   const colors = useThemeColors()
+
+  const steps = STEPS_BY_TYPE[bookingType]
 
   const estimate = useMemo(
     () => (pickup && dropoff ? estimateFare(pickup, dropoff, vehicle) : null),
     [pickup, dropoff, vehicle]
   )
+  const errand = useMemo(
+    () =>
+      bookingType !== "ride" && pickup && dropoff
+        ? estimateErrandFare(pickup, dropoff, bookingType as ErrandType)
+        : null,
+    [bookingType, pickup, dropoff]
+  )
+  const quote = bookingType === "ride" ? estimate : errand
 
   const markers = useMemo(() => {
     const list: MapMarker[] = []
@@ -138,16 +175,17 @@ export default function BookRide() {
 
   const next = () => {
     if (step === 0 && !pickup) {
-      toast.error("Set a pickup", {
+      toast.error(bookingType === "pabili" ? "Set the store" : "Set a pickup", {
         description: "Use your location, a preset, or tap the map.",
       })
       return
     }
     if (step === 1) {
       if (!dropoff) {
-        toast.error("Set a drop-off", {
-          description: "Choose a preset or tap the map.",
-        })
+        toast.error(
+          bookingType === "pabili" ? "Set a delivery point" : "Set a drop-off",
+          { description: "Choose a preset or tap the map." }
+        )
         return
       }
       if (samePoint) {
@@ -155,44 +193,101 @@ export default function BookRide() {
         return
       }
     }
-    setStep((prev) => Math.min(prev + 1, STEPS.length - 1))
+    setStep((prev) => Math.min(prev + 1, steps.length - 1))
   }
 
   const back = () => setStep((prev) => Math.max(prev - 1, 0))
 
   const confirm = () => {
-    if (!user || !pickup || !dropoff || !estimate) return
-    const booking = createBooking({
+    if (!user || !pickup || !dropoff) return
+    if (!quote) return
+
+    let fare: Booking["fare"]
+    if (bookingType === "ride" && estimate) {
+      fare = {
+        base: estimate.base,
+        distance: estimate.distanceCost,
+        total: estimate.total,
+      }
+    } else if (errand) {
+      fare = {
+        base: errand.base + errand.stopFee,
+        distance: errand.distanceCost,
+        total: errand.total,
+      }
+    } else {
+      return
+    }
+
+    const cleanItems = items
+      .map((item) => ({ ...item, name: item.name.trim() }))
+      .filter((item) => item.name.length > 0)
+    const budget = Number(itemBudget)
+
+    const payload: Parameters<typeof createBooking>[0] = {
       passengerId: user.id,
       passengerName: user.name,
       vehicle,
       pickup,
       dropoff,
-      distanceKm: estimate.distanceKm,
-      fare: {
-        base: estimate.base,
-        distance: estimate.distanceCost,
-        total: estimate.total,
-      },
+      distanceKm: quote.distanceKm,
+      fare,
       paymentMethod,
-    })
-    toast.success("Ride requested", {
-      description: "Looking for a rider nearby…",
-    })
+      bookingType,
+    }
+    if (bookingType === "pabili") {
+      payload.items = cleanItems
+      if (budget > 0) payload.itemBudget = budget
+    }
+    if (bookingType === "padala") {
+      if (cleanItems.length > 0) payload.items = cleanItems
+      if (recipientName.trim()) payload.recipientName = recipientName.trim()
+      if (recipientPhone.trim()) payload.recipientPhone = recipientPhone.trim()
+    }
+    if (notes.trim()) payload.notes = notes.trim()
+
+    const booking = createBooking(payload)
+    toast.success(
+      bookingType === "ride"
+        ? "Ride requested"
+        : bookingType === "pabili"
+          ? "Pabili requested"
+          : "Pasugo requested",
+      {
+        description:
+          bookingType === "ride"
+            ? "Looking for a rider nearby…"
+            : "Looking for a rider to run your errand…",
+      }
+    )
     router.push({ pathname: "/passenger/tracking", params: { id: booking.id } })
   }
 
   const hint =
     step === 0
-      ? "Tap the map to drop your pickup pin"
+      ? bookingType === "pabili"
+        ? "Tap the map to drop the store pin"
+        : "Tap the map to drop your pickup pin"
       : step === 1
-        ? "Tap the map to drop your drop-off pin"
+        ? bookingType === "pabili"
+          ? "Tap the map to drop the delivery pin"
+          : "Tap the map to drop your drop-off pin"
         : "Review your trip before confirming"
 
   return (
     <Screen header>
-      <PageHeader title="Book a ride" description="Three quick steps." />
-      <Stepper steps={STEPS} current={step} onSelect={setStep} />
+      <PageHeader
+        title={BOOKING_TYPE_TITLE[bookingType]}
+        description={BOOKING_TYPE_DESCRIPTION[bookingType]}
+      />
+      <ServiceTypePicker
+        value={bookingType}
+        onChange={(nextType) => {
+          setBookingType(nextType)
+          setStep(0)
+        }}
+      />
+      <Stepper steps={steps} current={step} onSelect={setStep} />
 
       <MapView
         height={280}
@@ -221,9 +316,13 @@ export default function BookRide() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
             {step === 0
-              ? "Choose pickup"
+              ? bookingType === "pabili"
+                ? "Choose store"
+                : "Choose pickup"
               : step === 1
-                ? "Choose drop-off"
+                ? bookingType === "pabili"
+                  ? "Choose delivery point"
+                  : "Choose drop-off"
                 : "Review & confirm"}
           </CardTitle>
         </CardHeader>
@@ -289,34 +388,88 @@ export default function BookRide() {
               </View>
             ) : null}
 
-            {step === 2 && estimate && pickup && dropoff ? (
+            {step === 2 && quote && pickup && dropoff ? (
               <View className="gap-4">
                 <View className="gap-3 rounded-lg border border-border p-3">
-                  <FareRow label="Pickup" value={pickup.name} />
-                  <FareRow label="Drop-off" value={dropoff.name} />
-                  <FareRow label="Distance" value={`${estimate.distanceKm} km`} />
-                  <FareRow label="Base fare" value={peso(estimate.base)} />
                   <FareRow
-                    label="Distance fare"
-                    value={peso(estimate.distanceCost)}
+                    label={bookingType === "pabili" ? "Store" : "Pickup"}
+                    value={pickup.name}
                   />
-                  {estimate.surgeAdjustment > 0 ? (
-                    <FareRow label="Surge" value={peso(estimate.surgeAdjustment)} />
+                  <FareRow
+                    label={bookingType === "pabili" ? "Deliver to" : "Drop-off"}
+                    value={dropoff.name}
+                  />
+                  <FareRow label="Distance" value={`${quote.distanceKm} km`} />
+                  {bookingType === "ride" && estimate ? (
+                    <>
+                      <FareRow label="Base fare" value={peso(estimate.base)} />
+                      <FareRow
+                        label="Distance fare"
+                        value={peso(estimate.distanceCost)}
+                      />
+                      {estimate.surgeAdjustment > 0 ? (
+                        <FareRow
+                          label="Surge"
+                          value={peso(estimate.surgeAdjustment)}
+                        />
+                      ) : null}
+                      {estimate.minimumTopUp > 0 ? (
+                        <FareRow
+                          label="Minimum fare top-up"
+                          value={peso(estimate.minimumTopUp)}
+                        />
+                      ) : null}
+                      <FareRow
+                        label="Booking fee"
+                        value={peso(estimate.bookingFee)}
+                      />
+                    </>
                   ) : null}
-                  {estimate.minimumTopUp > 0 ? (
-                    <FareRow
-                      label="Minimum fare top-up"
-                      value={peso(estimate.minimumTopUp)}
-                    />
+                  {bookingType !== "ride" && errand ? (
+                    <>
+                      <FareRow label="Base fee" value={peso(errand.base)} />
+                      <FareRow label="Stop fee" value={peso(errand.stopFee)} />
+                      <FareRow
+                        label="Distance fare"
+                        value={peso(errand.distanceCost)}
+                      />
+                      {errand.minimumTopUp > 0 ? (
+                        <FareRow
+                          label="Minimum fare top-up"
+                          value={peso(errand.minimumTopUp)}
+                        />
+                      ) : null}
+                      <FareRow
+                        label="Booking fee"
+                        value={peso(errand.bookingFee)}
+                      />
+                    </>
                   ) : null}
-                  <FareRow label="Booking fee" value={peso(estimate.bookingFee)} />
                   <View className="flex-row items-center justify-between border-t border-border pt-2">
-                    <Text className="text-sm font-medium">Estimated fare</Text>
+                    <Text className="text-sm font-medium">
+                      {bookingType === "ride" ? "Estimated fare" : "Estimated total"}
+                    </Text>
                     <Text className="text-sm font-semibold">
-                      {peso(estimate.total)}
+                      {peso(quote.total)}
                     </Text>
                   </View>
                 </View>
+
+                {bookingType !== "ride" ? (
+                  <ErrandFields
+                    type={bookingType}
+                    items={items}
+                    onItemsChange={setItems}
+                    budget={itemBudget}
+                    onBudgetChange={setItemBudget}
+                    recipientName={recipientName}
+                    onRecipientNameChange={setRecipientName}
+                    recipientPhone={recipientPhone}
+                    onRecipientPhoneChange={setRecipientPhone}
+                    notes={notes}
+                    onNotesChange={setNotes}
+                  />
+                ) : null}
 
                 <View className="gap-2">
                   <Text className="text-sm font-medium">Vehicle</Text>
@@ -357,13 +510,13 @@ export default function BookRide() {
               >
                 Back
               </Button>
-              {step < STEPS.length - 1 ? (
+              {step < steps.length - 1 ? (
                 <Button className="flex-1" onPress={next}>
                   Next
                 </Button>
               ) : (
                 <Button className="flex-1" onPress={confirm}>
-                  Confirm booking
+                  {BOOKING_TYPE_CTA[bookingType]}
                 </Button>
               )}
             </View>

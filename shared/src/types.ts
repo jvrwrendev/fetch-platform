@@ -6,6 +6,25 @@ export type Role = "passenger" | "rider"
 
 export type VehicleType = "motor" | "sedan" | "suv"
 
+/**
+ * What a passenger is asking for.
+ *
+ * `ride`   — take me from A to B.
+ * `pabili` — buy this at the store and bring it to me ("pabili" = to buy).
+ * `padala` — pick this up and deliver it to B. Shown to passengers as
+ *            "Pasugo" (the local word for running an errand) and to riders as
+ *            "Padala". All three share the ride lifecycle; only the request
+ *            payload and the receipt differ.
+ */
+export type BookingType = "ride" | "pabili" | "padala"
+
+/** One line of a pabili/pasugo shopping list. */
+export interface BookingErrandItem {
+  name: string
+  qty: number
+  note?: string
+}
+
 export type TripStatus =
   | "searching"
   | "accepted"
@@ -134,6 +153,17 @@ export interface Booking {
   createdAt: string
   completedAt?: string
   rating?: number
+  /** What the passenger asked for. Absent on older rows means a plain ride. */
+  bookingType?: BookingType
+  /** Pabili/pasugo shopping list. */
+  items?: BookingErrandItem[]
+  /** Cash the passenger commits up front to cover a pabili purchase. */
+  itemBudget?: number
+  /** Free-text note from the passenger (errand details, directions). */
+  notes?: string
+  /** Padala/pasugo recipient, when the goods go to someone else. */
+  recipientName?: string
+  recipientPhone?: string
 }
 
 export interface AppNotification {

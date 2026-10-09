@@ -1,5 +1,4 @@
 export { BookingCard } from "./BookingCard"
-export { ServiceCard } from "./ServiceCard"
 export { StatCard } from "./StatCard"
 export { StatusBadge } from "./StatusBadge"
 export { UserCard } from "./UserCard"

@@ -1,4 +1,4 @@
-import type { FareConfig, FareQuote, GeoPoint, PaymentMethod, VehicleType } from "./types"
+import type { BookingType, FareConfig, FareQuote, GeoPoint, PaymentMethod, VehicleType } from "./types"
 
 export const DEFAULT_FARE_CONFIG: FareConfig = {
   vehicle: {
@@ -68,4 +68,80 @@ export function estimateFare(
   config: FareConfig = DEFAULT_FARE_CONFIG
 ): FareQuote {
   return quoteFare(config, vehicle, distanceKm(pickup, dropoff))
+}
+
+/** The errand half of {@link BookingType}: pabili and pasugo (padala). */
+export type ErrandType = Exclude<BookingType, "ride">
+
+/**
+ * Errand pricing (pabili / pasugo).
+ *
+ * Errands get their own tariff rather than a vehicle class: the work is the
+ * same whichever vehicle turns up, and the shop/collection stop is the part
+ * that needs covering. It lives here beside the ride tariff so a rate change
+ * still has one home.
+ */
+export interface ErrandFareConfig {
+  base: number
+  perKm: number
+  /** Flat fee for the shop/collection stop. */
+  stopFee: number
+  /** Floor on the errand portion, before the booking fee. */
+  minFare: number
+  bookingFee: number
+}
+
+export const DEFAULT_ERRAND_FARE_CONFIG: ErrandFareConfig = {
+  base: 60,
+  perKm: 12,
+  stopFee: 25,
+  minFare: 60,
+  bookingFee: 15,
+}
+
+export interface ErrandQuote {
+  bookingType: ErrandType
+  distanceKm: number
+  base: number
+  distanceCost: number
+  stopFee: number
+  subtotal: number
+  minimumTopUp: number
+  bookingFee: number
+  total: number
+}
+
+/** Price one errand from a distance in km. */
+export function quoteErrand(
+  bookingType: ErrandType,
+  km: number,
+  config: ErrandFareConfig = DEFAULT_ERRAND_FARE_CONFIG
+): ErrandQuote {
+  const distance = Math.max(km, 0)
+  const distanceCost = Math.round(distance * config.perKm)
+  const subtotal = config.base + distanceCost + config.stopFee
+  const minimumTopUp = Math.max(config.minFare - subtotal, 0)
+  const total = Math.round(subtotal + minimumTopUp + config.bookingFee)
+
+  return {
+    bookingType,
+    distanceKm: Math.round(distance * 10) / 10,
+    base: config.base,
+    distanceCost,
+    stopFee: config.stopFee,
+    subtotal,
+    minimumTopUp,
+    bookingFee: config.bookingFee,
+    total,
+  }
+}
+
+/** Convenience for the app: quote an errand straight from two points. */
+export function estimateErrandFare(
+  pickup: GeoPoint,
+  dropoff: GeoPoint,
+  bookingType: ErrandType,
+  config: ErrandFareConfig = DEFAULT_ERRAND_FARE_CONFIG
+): ErrandQuote {
+  return quoteErrand(bookingType, distanceKm(pickup, dropoff), config)
 }

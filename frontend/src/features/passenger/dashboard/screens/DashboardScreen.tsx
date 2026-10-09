@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"
-import { ArrowRight, Plus } from "lucide-react-native"
+import { ArrowRight, Car, Package, ShoppingCart } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
@@ -9,8 +9,26 @@ import { Text } from "@/components/ui/text"
 import BookingCard from "@/components/BookingCard"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
+import {
+  BOOKING_TYPES,
+  BOOKING_TYPE_DESCRIPTION,
+  serviceLabel,
+  type BookingType,
+} from "@/shared"
 import { isTerminal } from "@/services/mock/simulation"
 import { useThemeColors } from "@/theme"
+
+const SERVICE_LABELS: Record<BookingType, string> = {
+  ride: "Book ride",
+  pabili: "Pabili",
+  padala: serviceLabel("padala", "commuter"),
+}
+
+const SERVICE_ICONS: Record<BookingType, typeof Car> = {
+  ride: Car,
+  pabili: ShoppingCart,
+  padala: Package,
+}
 
 export default function PassengerHome() {
   const { user } = useAuth()
@@ -31,28 +49,34 @@ export default function PassengerHome() {
         description="Where would you like to go?"
       />
 
-      <Card className="bg-primary">
-        <CardContent className="flex-row items-center justify-between gap-4 p-5 pt-5">
-          <View className="flex-1 gap-0.5">
-            <Text className="font-semibold text-primary-foreground">
-              Book a new ride
-            </Text>
-            <Text className="text-sm text-primary-foreground opacity-80">
-              Fast pickups across Metro Manila
-            </Text>
-          </View>
-          <Button
-            variant="secondary"
-            size="sm"
-            onPress={() => router.push("/passenger/booking")}
-          >
-            <Plus size={16} color={colors.secondaryForeground} />
-            <Text className="text-sm font-medium text-secondary-foreground">
-              Book
-            </Text>
-          </Button>
-        </CardContent>
-      </Card>
+      <View className="gap-3">
+        {BOOKING_TYPES.map((type) => {
+          const Icon = SERVICE_ICONS[type]
+          return (
+            <Pressable
+              key={type}
+              onPress={() =>
+                router.push({
+                  pathname: "/passenger/booking",
+                  params: { type },
+                })
+              }
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4"
+            >
+              <View className="size-10 items-center justify-center rounded-full bg-secondary">
+                <Icon size={18} color={colors.foreground} />
+              </View>
+              <View className="flex-1 gap-0.5">
+                <Text className="font-medium">{SERVICE_LABELS[type]}</Text>
+                <Text className="text-xs text-muted-foreground">
+                  {BOOKING_TYPE_DESCRIPTION[type]}
+                </Text>
+              </View>
+              <ArrowRight size={16} color={colors.mutedForeground} />
+            </Pressable>
+          )
+        })}
+      </View>
 
       {active ? (
         <Card>

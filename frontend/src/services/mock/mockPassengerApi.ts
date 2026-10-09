@@ -1,4 +1,5 @@
 import {
+  estimateErrandFare,
   estimateFare,
   INITIAL_BOOKINGS,
   type Booking,
@@ -19,21 +20,28 @@ export const mockPassengerApi: PassengerApi = {
     delay(INITIAL_BOOKINGS.filter((b) => b.passengerId === passengerId)),
 
   createBooking: (input: NewBookingInput) => {
-    const quote = estimateFare(input.pickup, input.dropoff, input.vehicle)
+    const errand =
+      input.bookingType === "pabili" || input.bookingType === "padala"
+        ? estimateErrandFare(input.pickup, input.dropoff, input.bookingType)
+        : null
+    const ride = errand
+      ? null
+      : estimateFare(input.pickup, input.dropoff, input.vehicle)
+    const quote = errand ?? ride!
+    const fare = errand
+      ? {
+          base: errand.base + errand.stopFee,
+          distance: errand.distanceCost,
+          total: errand.total,
+        }
+      : { base: ride!.base, distance: ride!.distanceCost, total: ride!.total }
+
     const booking: Booking = {
+      ...input,
       id: `b${Date.now()}`,
       reference: `FT-${Date.now().toString().slice(-6)}`,
-      passengerId: input.passengerId,
-      passengerName: input.passengerName,
-      vehicle: input.vehicle,
-      pickup: input.pickup,
-      dropoff: input.dropoff,
       distanceKm: quote.distanceKm,
-      fare: {
-        base: quote.base,
-        distance: quote.distanceCost,
-        total: quote.total,
-      },
+      fare,
       status: "searching",
       paymentMethod: input.paymentMethod ?? "cash",
       createdAt: new Date().toISOString(),

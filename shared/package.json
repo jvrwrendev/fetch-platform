@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
-    "test": "node --test test/fare.test.ts"
+    "test": "node --test test/fare.test.ts test/booking.test.ts"
   },
   "exports": {
     ".": "./src/index.ts",

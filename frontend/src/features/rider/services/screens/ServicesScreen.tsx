@@ -7,7 +7,7 @@ import { Text } from "@/components/ui/text"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
-import { VEHICLE_LABELS } from "@/shared"
+import { serviceLabel, VEHICLE_LABELS } from "@/shared"
 import { peso } from "@/utils/format"
 
 export default function RiderRequests() {
@@ -41,9 +41,25 @@ export default function RiderRequests() {
             </CardHeader>
             <CardContent className="gap-3">
               <Text className="text-sm text-muted-foreground">
+                {serviceLabel(booking.bookingType, "rider")
+                  ? `${serviceLabel(booking.bookingType, "rider")} · `
+                  : ""}
                 {VEHICLE_LABELS[booking.vehicle]} · {booking.distanceKm} km ·{" "}
                 {peso(booking.fare.total)} · {booking.passengerName}
               </Text>
+              {booking.items?.length ? (
+                <Text className="text-xs text-muted-foreground">
+                  {booking.items
+                    .map((item) => `${item.qty}× ${item.name}`)
+                    .join(", ")}
+                </Text>
+              ) : null}
+              {booking.recipientName ? (
+                <Text className="text-xs text-muted-foreground">
+                  To {booking.recipientName}
+                  {booking.recipientPhone ? ` · ${booking.recipientPhone}` : ""}
+                </Text>
+              ) : null}
               <View className="flex-row gap-2">
                 <Button
                   onPress={() => {

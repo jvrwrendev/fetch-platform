@@ -13,6 +13,7 @@ import { toast } from "@/components/ui/toast"
 import { useBookings } from "@/store/BookingsContext"
 import {
   pointAlong,
+  serviceLabel,
   VEHICLE_LABELS,
   type LatLng,
   type TripStatus,
@@ -69,6 +70,13 @@ export default function TripStatusScreen() {
   const active = !isTerminal(booking.status)
   const stepIndex = STEPS.indexOf(booking.status)
   const eta = etaSeconds(booking, now)
+  const service = serviceLabel(booking.bookingType, "commuter")
+  const title =
+    booking.bookingType === "pabili"
+      ? "Your pabili"
+      : booking.bookingType === "padala"
+        ? "Your pasugo"
+        : "Your ride"
 
   let rider: LatLng | null = null
   if (booking.status === "accepted" || booking.status === "arriving") {
@@ -104,9 +112,20 @@ export default function TripStatusScreen() {
           <ArrowLeft size={16} color={colors.foreground} />
         </Pressable>
         <PageHeader
-          title="Your ride"
+          title={title}
           description={booking.reference}
-          action={<Badge variant={STATUS_VARIANT[booking.status]}>{booking.status === "in_progress" ? "on trip" : statusLabel(booking.status)}</Badge>}
+          action={
+            <View className="flex-row items-center gap-2">
+              {service ? (
+                <Badge variant="secondary">{service}</Badge>
+              ) : null}
+              <Badge variant={STATUS_VARIANT[booking.status]}>
+                {booking.status === "in_progress"
+                  ? "on trip"
+                  : statusLabel(booking.status)}
+              </Badge>
+            </View>
+          }
         />
       </View>
 
@@ -162,6 +181,25 @@ export default function TripStatusScreen() {
           <Row label="Pickup" value={booking.pickup.name} />
           <Row label="Drop-off" value={booking.dropoff.name} />
           <Row label="Distance" value={`${booking.distanceKm} km`} />
+          {service ? <Row label="Service" value={service} /> : null}
+          {booking.items?.length ? (
+            <Row
+              label={booking.bookingType === "pabili" ? "Shopping list" : "Items"}
+              value={booking.items
+                .map((item) => `${item.qty}× ${item.name}`)
+                .join(", ")}
+            />
+          ) : null}
+          {booking.itemBudget ? (
+            <Row label="Purchase budget" value={peso(booking.itemBudget)} />
+          ) : null}
+          {booking.recipientName ? (
+            <Row label="Recipient" value={booking.recipientName} />
+          ) : null}
+          {booking.recipientPhone ? (
+            <Row label="Recipient phone" value={booking.recipientPhone} />
+          ) : null}
+          {booking.notes ? <Row label="Notes" value={booking.notes} /> : null}
           <Row label="Payment" value={booking.paymentMethod} />
           <Row label="Base fare" value={peso(booking.fare.base)} />
           <Row label="Distance fare" value={peso(booking.fare.distance)} />
@@ -182,7 +220,7 @@ export default function TripStatusScreen() {
             toast("Ride cancelled")
           }}
         >
-          Cancel ride
+          {service ? `Cancel ${service.toLowerCase()}` : "Cancel ride"}
         </Button>
       ) : null}
 
@@ -238,7 +276,7 @@ export default function TripStatusScreen() {
       {booking.status === "cancelled" ? (
         <View className="rounded-xl border border-border bg-card p-4">
           <Text className="text-sm text-muted-foreground">
-            This ride was cancelled.
+            This request was cancelled.
           </Text>
         </View>
       ) : null}

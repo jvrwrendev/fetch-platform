@@ -1,5 +1,7 @@
 import type {
   Booking,
+  BookingErrandItem,
+  BookingType,
   FareConfig,
   FareQuote,
   GeoPoint,
@@ -7,7 +9,7 @@ import type {
   VehicleType,
 } from "@/shared"
 
-/** Data a passenger supplies when requesting a ride. */
+/** Data a passenger supplies when requesting a ride or an errand. */
 export interface NewBookingInput {
   passengerId: string
   passengerName: string
@@ -15,6 +17,12 @@ export interface NewBookingInput {
   pickup: GeoPoint
   dropoff: GeoPoint
   paymentMethod?: PaymentMethod
+  bookingType?: BookingType
+  items?: BookingErrandItem[]
+  itemBudget?: number
+  notes?: string
+  recipientName?: string
+  recipientPhone?: string
 }
 
 /**

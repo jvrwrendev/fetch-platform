@@ -21,14 +21,4 @@ export const routes = {
     profile: "/rider/profile",
     trip: (id: string) => `/rider/trip/${id}`,
   },
-  admin: {
-    dashboard: "/admin/dashboard",
-    users: "/admin/users",
-    passengers: "/admin/passengers",
-    riders: "/admin/riders",
-    services: "/admin/services",
-    bookings: "/admin/bookings",
-    reports: "/admin/reports",
-    settings: "/admin/settings",
-  },
 } as const

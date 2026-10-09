@@ -75,12 +75,6 @@ export default function Landing() {
                 Use a demo account
               </Button>
             ) : null}
-            <Button
-              variant="ghost"
-              onPress={() => router.push("/admin/dashboard")}
-            >
-              Admin console
-            </Button>
           </Animated.View>
         </View>
       </ScrollView>

@@ -1,7 +1,6 @@
 export * from "./users"
 export * from "./passengers"
 export * from "./riders"
-export * from "./admins"
 export * from "./services"
 export * from "./bookings"
 export * from "./locations"

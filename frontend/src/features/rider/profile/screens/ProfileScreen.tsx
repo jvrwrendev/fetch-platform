@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
+import { AppearanceCard } from "@/components/AppearanceCard"
 import { Avatar, initialsOf } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -88,6 +89,8 @@ export default function RiderProfile() {
           <Button onPress={save}>Save changes</Button>
         </CardContent>
       </Card>
+
+      <AppearanceCard />
 
       <Button variant="outline" onPress={logout}>
         <LogOut size={16} color={colors.foreground} />

@@ -133,6 +133,7 @@ export interface Booking {
   paymentMethod: PaymentMethod
   createdAt: string
   completedAt?: string
+  rating?: number
 }
 
 export interface AppNotification {

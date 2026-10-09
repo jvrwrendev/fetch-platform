@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "workspaces": [
     "shared",
-    "fetch-mobile",
-    "admin-frontend"
+    "admin"
   ],
   "scripts": {
-    "dev:mobile": "npm run dev -w fetch-mobile",
-    "dev:admin": "npm run dev -w admin-frontend",
-    "build:mobile": "npm run build -w fetch-mobile",
-    "build:admin": "npm run build -w admin-frontend"
+    "dev:admin": "npm run dev -w admin",
+    "build:admin": "npm run build -w admin",
+    "dev:mobile": "npm --prefix frontend run start",
+    "dev:mobile:web": "npm --prefix frontend run web",
+    "build:mobile": "npm --prefix frontend run export:web",
+    "typecheck:mobile": "npm --prefix frontend run typecheck",
+    "install:mobile": "npm --prefix frontend install",
+    "install:all": "npm install && npm --prefix frontend install"
   }
 }

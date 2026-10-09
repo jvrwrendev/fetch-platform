@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "FETCH",
+    "slug": "fetch-transport",
+    "scheme": "fetch",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#ffffff",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fetch.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "FETCH uses your location to set your pickup point."
+      }
+    },
+    "android": {
+      "package": "com.fetch.app",
+      "edgeToEdgeEnabled": true,
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": ["expo-router"]
+  }
+}

@@ -12,6 +12,12 @@ import { useChats } from "@/store/ChatsContext"
 import { useThemeColors } from "@/theme"
 import { cn } from "@/utils/cn"
 
+/** One-tap replies, worded for each side of the trip. */
+const QUICK_REPLIES: Record<"passenger" | "rider", string[]> = {
+  passenger: ["On my way", "I'm here", "Please wait 5 min", "Thank you!"],
+  rider: ["On the way", "2 mins away", "At the pickup", "Done, thank you!"],
+}
+
 /** One booking's messages, with a composer. */
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -96,6 +102,18 @@ export default function ChatScreen() {
             )
           })
         )}
+      </View>
+
+      <View className="flex-row flex-wrap gap-2 pb-1">
+        {QUICK_REPLIES[user.role].map((reply) => (
+          <Pressable
+            key={reply}
+            onPress={() => send(booking.id, user.id, user.name, reply)}
+            className="rounded-full border border-border px-3 py-1.5"
+          >
+            <Text className="text-xs text-muted-foreground">{reply}</Text>
+          </Pressable>
+        ))}
       </View>
 
       <View className="flex-row items-end gap-2">

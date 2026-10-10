@@ -25,7 +25,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { usePassengers } from "./PassengersContext"
 import type { Passenger, PassengerStatus } from "@/lib/types"
 import { formatDate, formatNumber, peso } from "@/lib/format"
-import { PH_CITIES } from "@/data/mock/locations"
+import { PH_CITIES } from "@fetch/shared"
 import { useDebounce } from "@/hooks/use-debounce"
 
 type SortKey = "name" | "trips" | "spend" | "joined"

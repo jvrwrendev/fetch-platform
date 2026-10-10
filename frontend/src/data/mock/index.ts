@@ -1,6 +1,0 @@
-export * from "./users"
-export * from "./passengers"
-export * from "./riders"
-export * from "./bookings"
-export * from "./locations"
-export * from "./reports"

@@ -22,7 +22,7 @@ import {
   isTerminal,
   etaLabel,
   riderMarker,
-} from "@/services/mock/simulation"
+} from "@/services/trip"
 import { useThemeColors } from "@/theme"
 import { dateTime, peso, statusLabel } from "@/utils/format"
 

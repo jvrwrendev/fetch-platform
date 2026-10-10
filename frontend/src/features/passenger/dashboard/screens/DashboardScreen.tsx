@@ -16,7 +16,7 @@ import {
   serviceLabel,
   type BookingType,
 } from "@/shared"
-import { isTerminal } from "@/services/mock/simulation"
+import { isTerminal } from "@/services/trip"
 import { useThemeColors } from "@/theme"
 
 const SERVICE_LABELS: Record<BookingType, string> = {

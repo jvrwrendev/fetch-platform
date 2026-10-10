@@ -1,1 +1,0 @@
-export { PASSENGERS } from "@/shared"

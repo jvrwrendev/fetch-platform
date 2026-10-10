@@ -1,14 +1,10 @@
 # FETCH backend (skeleton)
 
-This directory is a **skeleton**. The current build is mock-only — there is no
-running server, no database, and no network calls to a FETCH API. Every screen
-reads from the shared mock world in [`shared/src/mock`](../shared/src/mock) and
-the ride lifecycle is simulated on the client (see
-[`frontend/src/services/mock/simulation.ts`](../frontend/src/services/mock/simulation.ts)).
-
-The tree exists so the repository already has the `frontend/ + backend/` shape a
-real deployment would take, without pretending a service is running. Nothing here
-is imported by the app.
+This directory is a **skeleton**. The live backend is Convex
+([`frontend/convex`](../frontend/convex)); this is the placeholder for a
+conventional HTTP service and nothing here is imported by the app. The tree
+exists so the repository already has the `frontend/ + backend/` shape a real
+deployment would take, without pretending a service is running.
 
 ## Layout
 

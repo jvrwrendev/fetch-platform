@@ -33,11 +33,10 @@ import { UserCell } from "@/components/shared/UserCell"
 import { TableSkeleton } from "@/components/shared/DataTable"
 import { useBookings } from "@/features/bookings/BookingsContext"
 import { useNotifications } from "@/features/notifications/NotificationsContext"
-import { bookingService, reportsService, type BookingQuery } from "@/lib/services"
+import { bookingService, reportsService, riderService, type BookingQuery } from "@/lib/services"
 import { compactNumber, formatDateTime, peso } from "@/lib/format"
-import type { Booking, DashboardStats } from "@/lib/types"
+import type { Booking, DashboardStats, Rider } from "@/lib/types"
 import { MapView } from "@/features/map/MapView"
-import { RIDERS } from "@/data/mock/generate"
 
 const revenueChartConfig = {
   revenue: {
@@ -54,6 +53,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [revenue, setRevenue] = useState<{ date: string; revenue: number; bookings: number }[]>([])
   const [recent, setRecent] = useState<Booking[]>([])
+  const [liveRiders, setLiveRiders] = useState<Rider[]>([])
   const [loading, setLoading] = useState(true)
   const { data: bookingsPage } = useBookings()
   const { unreadCount } = useNotifications()
@@ -64,11 +64,15 @@ export default function DashboardPage() {
       reportsService.dashboardStats(),
       reportsService.revenueSeries(14),
       bookingService.list({ page: 1, pageSize: 5, sort: "newest" } as BookingQuery),
-    ]).then(([s, r, b]) => {
+      riderService.listAll(),
+    ]).then(([s, r, b, riders]) => {
       if (cancelled) return
       setStats(s)
       setRevenue(r)
       setRecent(b.items)
+      setLiveRiders(
+        riders.filter((rider) => rider.availability !== "offline" && rider.status === "active")
+      )
       setLoading(false)
     })
     return () => {
@@ -76,18 +80,12 @@ export default function DashboardPage() {
     }
   }, [])
 
-  const liveRiders = useMemo(
-    () => RIDERS.filter((r) => r.availability !== "offline" && r.status === "active"),
-    []
-  )
-
   const mapMarkers = useMemo(
     () =>
       liveRiders.map((r) => ({
         position: [r.location.lat, r.location.lng] as [number, number],
         label: r.name,
-        color:
-          r.availability === "on_trip" ? "#f59e0b" : "#10b981",
+        color: r.availability === "on_trip" ? "#f59e0b" : "#10b981",
       })),
     [liveRiders]
   )

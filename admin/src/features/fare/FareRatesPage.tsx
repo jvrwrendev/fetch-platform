@@ -37,8 +37,8 @@ import { fareService } from "@/lib/services"
 import { distanceKm, quoteFare } from "@/lib/fare"
 import { peso, pesoPrecise } from "@/lib/format"
 import type { FareConfig } from "@/lib/types"
-import { LOCATIONS } from "@/data/mock/locations"
-import { SURGE_MAX, SURGE_MIN, SURGE_STEP } from "@/data/mock/fare"
+import { LOCATIONS } from "@fetch/shared"
+import { SURGE_MAX, SURGE_MIN, SURGE_STEP } from "@fetch/shared"
 
 /** The one vehicle class, with a sample trip for the rate card. */
 const VEHICLE = { label: "Motorcycle", icon: Bike, sampleKm: 5, sampleNote: "Typical city hop" }

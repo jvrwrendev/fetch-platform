@@ -10,7 +10,7 @@ import {
   markerProgress,
   riderMarker,
   riderOrigin,
-} from "../src/services/mock/simulation.ts"
+} from "../src/services/trip.ts"
 
 const T0 = Date.UTC(2026, 0, 1, 8, 0, 0)
 const iso = (ms: number) => new Date(ms).toISOString()

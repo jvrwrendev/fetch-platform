@@ -16,7 +16,7 @@ import {
   type LatLng,
   type TripStatus,
 } from "@/shared"
-import { isTerminal, riderMarker } from "@/services/mock/simulation"
+import { isTerminal, riderMarker } from "@/services/trip"
 import { useThemeColors } from "@/theme"
 import { peso, statusLabel } from "@/utils/format"
 

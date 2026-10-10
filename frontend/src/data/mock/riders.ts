@@ -1,1 +1,0 @@
-export { RIDERS } from "@/shared"

@@ -1,10 +1,25 @@
 import { Tabs } from "expo-router"
 import { History, Home, MapPin, MessageCircle } from "lucide-react-native"
 
+import { useAuth } from "@/store/AuthContext"
+import { useBookings } from "@/store/BookingsContext"
+import { useChats } from "@/store/ChatsContext"
 import { useThemeColors } from "@/theme"
 
 export default function PassengerTabs() {
   const colors = useThemeColors()
+  const { user } = useAuth()
+  const { bookings } = useBookings()
+  const { unreadFor } = useChats()
+
+  const unread = user
+    ? unreadFor(
+        user.id,
+        bookings
+          .filter((booking) => booking.passengerId === user.id)
+          .map((booking) => booking.id)
+      )
+    : 0
 
   return (
     <Tabs
@@ -44,6 +59,7 @@ export default function PassengerTabs() {
         name="chats"
         options={{
           title: "Chats",
+          tabBarBadge: unread > 0 ? unread : undefined,
           tabBarIcon: ({ color, size }) => (
             <MessageCircle color={color} size={size} />
           ),

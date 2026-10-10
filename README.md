@@ -39,17 +39,16 @@ frontend/
 └── src/
     ├── components/          #   shadcn-style UI + MapView/ServiceCard/BookingCard/…
     ├── features/            #   passenger/ rider/ implementations per domain
-    ├── data/mock/           #   thin facades over @fetch/shared
-    ├── services/            #   api/ (interfaces) + mock/ + maps/
-    ├── store/               #   AuthContext, BookingsContext
+    ├── services/            #   convex client + maps/ + trip progress
+    ├── store/               #   AuthContext, BookingsContext, ChatsContext, …
     ├── navigation/          #   typed route map
     ├── hooks/  types/  theme/  utils/
 ```
 
 Route files in `app/` are one-line shims; the real screens live under
-`src/features/<role>/<domain>/screens/`. The mock service layer
-(`src/services/api` interfaces + `src/services/mock` implementations) is the seam
-a real backend would replace.
+`src/features/<role>/<domain>/screens/`. Screens read their data from the Convex
+stores in `src/store` (`frontend/convex/` holds the backend), and the trip
+marker's maths lives in `src/services/trip.ts`.
 
 ## Quick start
 

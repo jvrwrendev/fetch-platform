@@ -1,13 +1,11 @@
-import type {
-  AppNotification,
-  Booking,
-  GeoPoint,
-  Passenger,
-  Rider,
-  TripStatus,
-} from "../types"
-import { DEFAULT_FARE_CONFIG } from "../fare"
+import type { Passenger, Rider } from "../types"
 import { LOCATIONS, PH_CITIES } from "./locations"
+
+/**
+ * The demo population: the 60 passengers and 40 riders the admin console
+ * browses. Seeded into Convex by `convex/directory.ts`, so this stays the one
+ * definition of who the demo world contains.
+ */
 
 function mulberry32(seed: number) {
   let a = seed
@@ -24,7 +22,8 @@ const rand = mulberry32(20261008)
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)]!
 const between = (min: number, max: number) => min + rand() * (max - min)
-const intBetween = (min: number, max: number) => Math.floor(between(min, max + 1))
+const intBetween = (min: number, max: number) =>
+  Math.floor(between(min, max + 1))
 
 const FIRST_NAMES = [
   "Juan", "Maria", "Jose", "Ana", "Miguel", "Angelica", "Ricardo", "Teresa",
@@ -51,12 +50,11 @@ const EMAIL_DOMAINS = ["gmail.com", "yahoo.com", "outlook.com", "icloud.com"]
 
 const PLATE_PREFIXES = ["NCR", "ABC", "PJT", "UVL", "JRT", "SLM", "NDP", "CYA"]
 
+/** The platform runs motorcycle taxis, so riders all ride one of these. */
 const MOTOR_MODELS = [
   "Honda BeAT", "Honda Click 160", "Yamaha Mio", "Suzuki Skydrive",
-  "Honda TMX 125", "KawasakiBarako II",
+  "Honda TMX 125", "Kawasaki Barako II",
 ]
-
-const PAYMENTS: Booking["paymentMethod"][] = ["cash", "ewallet", "cash", "ewallet"]
 
 function slug(name: string, index: number): string {
   const base = name
@@ -91,15 +89,12 @@ function daysAgo(days: number, hourMin = 8, hourMax = 21): string {
   return d.toISOString()
 }
 
-function jitter(point: GeoPoint): GeoPoint {
+function jitter(point: { lat: number; lng: number }) {
   return {
-    ...point,
     lat: point.lat + between(-0.012, 0.012),
     lng: point.lng + between(-0.012, 0.012),
   }
 }
-
-const VEHICLE_RATES = DEFAULT_FARE_CONFIG
 
 export const PASSENGERS: Passenger[] = Array.from({ length: 60 }, (_, i) => {
   const name = `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`
@@ -163,177 +158,6 @@ export const RIDERS: Rider[] = Array.from({ length: 40 }, (_, i) => {
     joinedAt: daysAgo(intBetween(15, 800)),
     lastActiveAt: daysAgo(intBetween(0, 20)),
     city: pick(PH_CITIES),
-    location: jitter(pick(LOCATIONS)),
+    location: { name: "Rider", address: "Nearby", ...jitter(pick(LOCATIONS)) },
   }
 })
-
-const APPROVED_RIDERS = RIDERS.filter((r) => r.approval === "approved")
-
-const BOOKING_STATUSES: { status: TripStatus; weight: number }[] = [
-  { status: "completed", weight: 0.62 },
-  { status: "cancelled", weight: 0.12 },
-  { status: "in_progress", weight: 0.08 },
-  { status: "arriving", weight: 0.05 },
-  { status: "accepted", weight: 0.05 },
-  { status: "searching", weight: 0.08 },
-]
-
-function weightedStatus(): TripStatus {
-  const roll = rand()
-  let acc = 0
-  for (const item of BOOKING_STATUSES) {
-    acc += item.weight
-    if (roll <= acc) return item.status
-  }
-  return "completed"
-}
-
-function activePassengers() {
-  const active = PASSENGERS.filter((p) => p.status === "active")
-  return active.length > 0 ? active : PASSENGERS
-}
-
-export const BOOKINGS: Booking[] = Array.from({ length: 150 }, (_, i) => {
-  const passenger = pick(activePassengers())
-  const status = weightedStatus()
-  const needsRider = status !== "searching"
-  const rider = needsRider && APPROVED_RIDERS.length > 0 ? pick(APPROVED_RIDERS) : undefined
-  const pickup = pick(LOCATIONS)
-  let dropoff = pick(LOCATIONS)
-  while (dropoff.name === pickup.name) dropoff = pick(LOCATIONS)
-
-  const R = 6371
-  const toRad = (d: number) => (d * Math.PI) / 180
-  const dLat = toRad(dropoff.lat - pickup.lat)
-  const dLng = toRad(dropoff.lng - pickup.lng)
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(pickup.lat)) * Math.cos(toRad(dropoff.lat)) * Math.sin(dLng / 2) ** 2
-  const distanceKm = Math.max(Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10, 0.8)
-
-  const rate = VEHICLE_RATES
-  const baseCost = rate.base
-  const distanceCost = Math.round(distanceKm * rate.perKm)
-  const total = status === "cancelled" ? 0 : baseCost + distanceCost
-
-  const daysBack = i < 8 ? intBetween(0, 1) : intBetween(0, 89)
-  const createdAt = daysAgo(daysBack, 6, 22)
-  const completedAt =
-    status === "completed" || status === "cancelled"
-      ? new Date(new Date(createdAt).getTime() + intBetween(12, 55) * 60_000).toISOString()
-      : undefined
-
-  return {
-    id: `b${1001 + i}`,
-    reference: `FT-${String(84000 + i)}`,
-    passengerId: passenger.id,
-    passengerName: passenger.name,
-    riderId: rider?.id,
-    riderName: rider?.name,
-    pickup,
-    dropoff,
-    distanceKm,
-    fare: { base: baseCost, distance: distanceCost, total },
-    status,
-    paymentMethod: pick(PAYMENTS),
-    createdAt,
-    completedAt,
-  }
-}).sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-
-export const NOTIFICATIONS: AppNotification[] = [
-  {
-    id: "n1",
-    kind: "booking",
-    severity: "success",
-    title: "Booking completed",
-    message: `${BOOKINGS[0].reference} was completed by ${BOOKINGS[0].riderName ?? "a rider"} — ${BOOKINGS[0].fare.total > 0 ? `₱${BOOKINGS[0].fare.total}` : "no fare"}.`,
-    read: false,
-    createdAt: daysAgo(0, 9, 11),
-    reference: BOOKINGS[0].reference,
-  },
-  {
-    id: "n2",
-    kind: "system",
-    severity: "warning",
-    title: "Rider awaiting approval",
-    message: `${RIDERS.find((r) => r.approval === "pending")?.name ?? "A new rider"} submitted documents for verification.`,
-    read: false,
-    createdAt: daysAgo(0, 8, 10),
-  },
-  {
-    id: "n3",
-    kind: "booking",
-    severity: "info",
-    title: "Trip in progress",
-    message: `${BOOKINGS.find((b) => b.status === "in_progress")?.reference ?? "A booking"} is currently en route to its destination.`,
-    read: false,
-    createdAt: daysAgo(0, 7, 9),
-  },
-  {
-    id: "n4",
-    kind: "system",
-    severity: "danger",
-    title: "Rider suspended",
-    message: `${RIDERS.find((r) => r.status === "suspended")?.name ?? "A rider"} was suspended after repeated cancellations.`,
-    read: true,
-    createdAt: daysAgo(1, 14, 17),
-  },
-  {
-    id: "n5",
-    kind: "booking",
-    severity: "warning",
-    title: "Booking cancelled",
-    message: `${BOOKINGS.find((b) => b.status === "cancelled")?.reference ?? "A booking"} was cancelled by the passenger.`,
-    read: true,
-    createdAt: daysAgo(1, 10, 13),
-  },
-  {
-    id: "n6",
-    kind: "system",
-    severity: "success",
-    title: "Weekly payout settled",
-    message: "Rider payouts for Sept 29 – Oct 5 have been processed via bank transfer.",
-    read: true,
-    createdAt: daysAgo(2, 9, 11),
-  },
-  {
-    id: "n7",
-    kind: "system",
-    severity: "info",
-    title: "New passenger registrations",
-    message: `${intBetween(8, 30)} new passengers registered in the last 24 hours.`,
-    read: true,
-    createdAt: daysAgo(3, 8, 10),
-  },
-  {
-    id: "n8",
-    kind: "booking",
-    severity: "success",
-    title: "Peak-hour surge applied",
-    message: "Surge pricing was applied to 42 bookings during the evening rush in Makati.",
-    read: true,
-    createdAt: daysAgo(4, 17, 20),
-  },
-  {
-    id: "n9",
-    kind: "system",
-    severity: "warning",
-    title: "Document expiring",
-    message: `${intBetween(2, 5)} riders have LTFRB documents expiring within 30 days.`,
-    read: true,
-    createdAt: daysAgo(5, 9, 12),
-  },
-  {
-    id: "n10",
-    kind: "booking",
-    severity: "info",
-    title: "Airport queue backup",
-    message: "NAIA Terminal 3 pickup queue exceeded 15 riders — consider prompting availability elsewhere.",
-    read: true,
-    createdAt: daysAgo(6, 13, 16),
-  },
-]
-
-export const SAMPLE_PICKUP: GeoPoint = LOCATIONS[0]!
-export const SAMPLE_DROPOFF: GeoPoint = LOCATIONS[6]!

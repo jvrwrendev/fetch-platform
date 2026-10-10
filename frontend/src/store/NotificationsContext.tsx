@@ -1,15 +1,14 @@
-import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useMutation, useQuery } from "convex/react"
 import {
   createContext,
-  useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react"
 
-import { NOTIFICATIONS, type AppNotification } from "@/shared"
+import { api } from "@convex/_generated/api"
+import type { AppNotification } from "@/shared"
+import { useAuth } from "@/store/AuthContext"
 
 interface NotificationsContextValue {
   notifications: AppNotification[]
@@ -21,46 +20,45 @@ interface NotificationsContextValue {
 const NotificationsContext = createContext<NotificationsContextValue | null>(
   null
 )
-const STORAGE_KEY = "fetch_notifications"
 
-/** Read state for the bell, seeded from the shared mock world and persisted. */
+function toNotification(doc: Record<string, unknown>): AppNotification {
+  return {
+    id: String(doc.id),
+    kind: doc.kind as AppNotification["kind"],
+    severity: doc.severity as AppNotification["severity"],
+    title: String(doc.title),
+    message: String(doc.message),
+    read: Boolean(doc.read),
+    createdAt: String(doc.createdAt),
+  }
+}
+
+/** The header bell's list, per account, straight from Convex. */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] =
-    useState<AppNotification[]>(NOTIFICATIONS)
-  const [hydrated, setHydrated] = useState(false)
+  const { user } = useAuth()
 
-  useEffect(() => {
-    let mounted = true
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (mounted && raw) setNotifications(JSON.parse(raw) as AppNotification[])
-      })
-      .catch(() => undefined)
-      .finally(() => mounted && setHydrated(true))
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!hydrated) return
-    void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notifications))
-  }, [notifications, hydrated])
-
-  const markAllRead = useCallback(() => {
-    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })))
-  }, [])
-
-  const markRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, read: true } : item))
-    )
-  }, [])
+  const rows = useQuery(
+    api.notifications.listMine,
+    user ? { userId: user.id } : "skip"
+  )
+  const markAllReadMutation = useMutation(api.notifications.markAllRead)
+  const markReadMutation = useMutation(api.notifications.markRead)
 
   const value = useMemo(() => {
-    const unreadCount = notifications.filter((item) => !item.read).length
-    return { notifications, unreadCount, markAllRead, markRead }
-  }, [notifications, markAllRead, markRead])
+    const notifications = (rows ?? []).map((row) =>
+      toNotification(row as unknown as Record<string, unknown>)
+    )
+    return {
+      notifications,
+      unreadCount: notifications.filter((item) => !item.read).length,
+      markAllRead: () => {
+        if (user) void markAllReadMutation({ userId: user.id })
+      },
+      markRead: (id: string) => {
+        void markReadMutation({ id })
+      },
+    }
+  }, [rows, user, markAllReadMutation, markReadMutation])
 
   return (
     <NotificationsContext.Provider value={value}>
@@ -72,7 +70,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 export function useNotifications() {
   const context = useContext(NotificationsContext)
   if (!context) {
-    throw new Error("useNotifications must be used within a NotificationsProvider")
+    throw new Error(
+      "useNotifications must be used within a NotificationsProvider"
+    )
   }
   return context
 }

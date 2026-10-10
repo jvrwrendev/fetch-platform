@@ -4,6 +4,7 @@ dist/
 web-build/
 *.log
 .env
+.env.local
 !.env.example
 .DS_Store
 android/

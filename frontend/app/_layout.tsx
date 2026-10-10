@@ -2,10 +2,12 @@ import "@/theme/global.css"
 
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
+import { ConvexProvider } from "convex/react"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { ToastHost } from "@/components/ui/toast"
+import { convex } from "@/services/convex/client"
 import { AuthProvider } from "@/store/AuthContext"
 import { BookingsProvider } from "@/store/BookingsContext"
 import { ChatsProvider } from "@/store/ChatsContext"
@@ -17,22 +19,24 @@ import { useThemeColors } from "@/theme"
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <SettingsProvider>
-              <NotificationsProvider>
-                <BookingsProvider>
-                  <ChatsProvider>
-                    <ThemedStack />
-                    <ToastHost />
-                  </ChatsProvider>
-                </BookingsProvider>
-              </NotificationsProvider>
-            </SettingsProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <ConvexProvider client={convex}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <SettingsProvider>
+                <NotificationsProvider>
+                  <BookingsProvider>
+                    <ChatsProvider>
+                      <ThemedStack />
+                      <ToastHost />
+                    </ChatsProvider>
+                  </BookingsProvider>
+                </NotificationsProvider>
+              </SettingsProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </ConvexProvider>
     </GestureHandlerRootView>
   )
 }

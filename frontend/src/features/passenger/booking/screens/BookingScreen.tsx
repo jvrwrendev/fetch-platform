@@ -243,21 +243,31 @@ export default function BookRide() {
     }
     if (notes.trim()) payload.notes = notes.trim()
 
-    const booking = createBooking(payload)
-    toast.success(
-      bookingType === "ride"
-        ? "Ride requested"
-        : bookingType === "pabili"
-          ? "Pabili requested"
-          : "Pasugo requested",
-      {
-        description:
+    void createBooking(payload)
+      .then((booking) => {
+        toast.success(
           bookingType === "ride"
-            ? "Looking for a rider nearby…"
-            : "Looking for a rider to run your errand…",
-      }
-    )
-    router.push({ pathname: "/passenger/tracking", params: { id: booking.id } })
+            ? "Ride requested"
+            : bookingType === "pabili"
+              ? "Pabili requested"
+              : "Pasugo requested",
+          {
+            description:
+              bookingType === "ride"
+                ? "Looking for a rider nearby…"
+                : "Looking for a rider to run your errand…",
+          }
+        )
+        router.push({
+          pathname: "/passenger/tracking",
+          params: { id: booking.id },
+        })
+      })
+      .catch(() => {
+        toast.error("Could not create the booking", {
+          description: "Check your connection and try again.",
+        })
+      })
   }
 
   const hint =

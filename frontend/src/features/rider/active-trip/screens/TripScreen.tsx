@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { ArrowLeft } from "lucide-react-native"
+import { ArrowLeft, MessageCircle } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
@@ -138,6 +138,16 @@ export default function RiderTrip() {
           </View>
         </CardContent>
       </Card>
+
+      <Button
+        variant="outline"
+        onPress={() => router.push(`/rider/chat/${booking.id}`)}
+      >
+        <MessageCircle size={16} color={colors.foreground} />
+        <Text className="text-sm font-medium">
+          Message {booking.passengerName.split(" ")[0]}
+        </Text>
+      </Button>
 
       {next ? (
         <Button

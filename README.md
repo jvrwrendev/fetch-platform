@@ -94,9 +94,14 @@ admin fare editor and the passenger app's quote both go through `estimateFare` /
 - **Rider** — go online, see open requests, accept/decline, advance a trip
   through its stages, earnings and history, plus settings (availability,
   notifications, vehicle, service area, appearance) under the account menu.
-- **Top bar** — every tabbed screen carries the brand, a **notification bell**
-  with an unread badge, and the **account avatar** (Profile, Settings, sign out),
-  so the bottom bar is left to the work itself.
+- **Top bar** — every tabbed screen carries the FETCH mark, a **notification bell**
+  with an unread badge, and the **account avatar**. The avatar opens the account
+  panel (identity + edit, notifications, default payment, saved places, service
+  area, appearance, trips, chats, help, terms/privacy, sign out); the bell opens
+  the notification list.
+- **Chats** — a tab on both sides. Each trip has a message thread with the other
+  party, opened from the list or a "Message rider/passenger" button on the live
+  trip.
 - **Admin** (`admin/`, browser) — dashboard stats and charts, passengers, riders,
   bookings, fare rates, a Leaflet live map, reports, notifications, profile and
   settings, all reading the same mock world.

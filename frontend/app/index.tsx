@@ -1,11 +1,12 @@
 import { useRouter } from "expo-router"
-import { Car, MapPin, ShieldCheck } from "lucide-react-native"
+import { MapPin, ShieldCheck } from "lucide-react-native"
 import type { ReactNode } from "react"
 import { ScrollView, View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import { Button } from "@/components/ui/button"
+import { FetchMark } from "@/components/FetchMark"
 import { Text } from "@/components/ui/text"
 import { LIVE_CITIES } from "@/shared"
 import { useAuth } from "@/store/AuthContext"
@@ -32,9 +33,7 @@ export default function Landing() {
             entering={FadeInDown.duration(500)}
             className="flex-row items-center gap-2"
           >
-            <View className="size-9 items-center justify-center rounded-xl bg-primary">
-              <Car size={20} color={colors.primaryForeground} />
-            </View>
+            <FetchMark size={36} />
             <Text className="text-xl font-bold tracking-tight">Fetch</Text>
           </Animated.View>
 

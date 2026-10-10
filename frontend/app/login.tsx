@@ -5,6 +5,7 @@ import { View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import { Button } from "@/components/ui/button"
+import { FetchMark } from "@/components/FetchMark"
 import {
   Card,
   CardContent,
@@ -33,7 +34,8 @@ export default function Login() {
   return (
     <SafeAreaView className="flex-1 bg-muted/30">
       <View className="mx-auto w-full max-w-md flex-1 justify-center gap-6 px-4">
-        <View className="items-center gap-1">
+        <View className="items-center gap-2">
+          <FetchMark size={56} />
           <Text className="text-3xl font-bold tracking-tight">Fetch</Text>
           <Text className="text-center text-sm text-muted-foreground">
             Sign in with a demo account to continue

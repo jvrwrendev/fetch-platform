@@ -19,6 +19,7 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { FetchBrand } from "@/components/shared/FetchBrand"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -229,12 +230,10 @@ export default function AdminLayout() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" render={<NavLink to="/" />}>
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <span className="text-sm font-bold">F</span>
-                </div>
+                <FetchBrand size="sm" showWordmark={false} className="shrink-0" />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-semibold">Fetch Admin</span>
-                  <span className="truncate text-xs text-muted-foreground">Ride Platform</span>
+                  <span className="truncate text-xs text-muted-foreground">Bukidnon · Ride Platform</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>

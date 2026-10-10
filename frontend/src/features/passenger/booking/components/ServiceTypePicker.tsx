@@ -1,4 +1,4 @@
-import { Car, Package, ShoppingCart } from "lucide-react-native"
+import { Bike, Package, ShoppingBasket, type LucideIcon } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { Text } from "@/components/ui/text"
@@ -16,9 +16,9 @@ const LABELS: Record<BookingType, string> = {
   padala: serviceLabel("padala", "commuter"),
 }
 
-const ICONS: Record<BookingType, typeof Car> = {
-  ride: Car,
-  pabili: ShoppingCart,
+const ICONS: Record<BookingType, LucideIcon> = {
+  ride: Bike,
+  pabili: ShoppingBasket,
   padala: Package,
 }
 

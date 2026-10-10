@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AccountMenu } from "@/components/layout/AccountMenu"
 import { NotificationBell } from "@/components/layout/NotificationBell"
+import { FetchMark } from "@/components/FetchMark"
 import { Text } from "@/components/ui/text"
 
 /**
@@ -19,7 +20,8 @@ export function AppHeader() {
       className="border-b border-border bg-card px-4"
       style={{ paddingTop: insets.top }}
     >
-      <View className="mx-auto h-14 w-full max-w-2xl flex-row items-center gap-3">
+      <View className="mx-auto h-14 w-full max-w-2xl flex-row items-center gap-2">
+        <FetchMark size={28} />
         <Text className="text-lg font-bold tracking-tight">Fetch</Text>
         <View className="ml-auto flex-row items-center gap-2">
           <NotificationBell />

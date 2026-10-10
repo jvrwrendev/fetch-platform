@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router"
-import { History, Home, MapPin } from "lucide-react-native"
+import { History, Home, MapPin, MessageCircle } from "lucide-react-native"
 
 import { useThemeColors } from "@/theme"
 
@@ -38,6 +38,15 @@ export default function PassengerTabs() {
         options={{
           title: "Trips",
           tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chats"
+        options={{
+          title: "Chats",
+          tabBarIcon: ({ color, size }) => (
+            <MessageCircle color={color} size={size} />
+          ),
         }}
       />
     </Tabs>

@@ -1,10 +1,11 @@
 import { useRouter } from "expo-router"
-import { ArrowRight, Bike, Package, ShoppingBasket, type LucideIcon } from "lucide-react-native"
+import { ArrowRight } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ServiceIcon } from "@/components/ServiceIcon"
 import { Text } from "@/components/ui/text"
 import BookingCard from "@/components/BookingCard"
 import { useAuth } from "@/store/AuthContext"
@@ -22,12 +23,6 @@ const SERVICE_LABELS: Record<BookingType, string> = {
   ride: "Book ride",
   pabili: "Pabili",
   padala: serviceLabel("padala", "commuter"),
-}
-
-const SERVICE_ICONS: Record<BookingType, LucideIcon> = {
-  ride: Bike,
-  pabili: ShoppingBasket,
-  padala: Package,
 }
 
 export default function PassengerHome() {
@@ -51,7 +46,6 @@ export default function PassengerHome() {
 
       <View className="gap-3">
         {BOOKING_TYPES.map((type) => {
-          const Icon = SERVICE_ICONS[type]
           return (
             <Pressable
               key={type}
@@ -64,7 +58,7 @@ export default function PassengerHome() {
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4"
             >
               <View className="size-10 items-center justify-center rounded-full bg-secondary">
-                <Icon size={18} color={colors.foreground} />
+                <ServiceIcon type={type} size={20} color={colors.foreground} />
               </View>
               <View className="flex-1 gap-0.5">
                 <Text className="font-medium">{SERVICE_LABELS[type]}</Text>

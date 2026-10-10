@@ -1,6 +1,6 @@
-import { Bike, Package, ShoppingBasket, type LucideIcon } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
+import { ServiceIcon } from "@/components/ServiceIcon"
 import { Text } from "@/components/ui/text"
 import {
   BOOKING_TYPES,
@@ -14,12 +14,6 @@ const LABELS: Record<BookingType, string> = {
   ride: "Book ride",
   pabili: "Pabili",
   padala: serviceLabel("padala", "commuter"),
-}
-
-const ICONS: Record<BookingType, LucideIcon> = {
-  ride: Bike,
-  pabili: ShoppingBasket,
-  padala: Package,
 }
 
 /** The three services a passenger can book, as one compact chooser. */
@@ -36,7 +30,6 @@ export function ServiceTypePicker({
     <View className="flex-row gap-2">
       {BOOKING_TYPES.map((type) => {
         const active = type === value
-        const Icon = ICONS[type]
         return (
           <Pressable
             key={type}
@@ -46,8 +39,9 @@ export function ServiceTypePicker({
               active ? "border-primary bg-primary" : "border-border bg-card"
             )}
           >
-            <Icon
-              size={18}
+            <ServiceIcon
+              type={type}
+              size={20}
               color={active ? colors.primaryForeground : colors.foreground}
             />
             <Text

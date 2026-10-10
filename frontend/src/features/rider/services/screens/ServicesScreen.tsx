@@ -1,6 +1,7 @@
 import { View } from "react-native"
 
 import { PageHeader, Screen } from "@/components/layout/Screen"
+import { ServiceIcon } from "@/components/ServiceIcon"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
@@ -8,11 +9,13 @@ import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
 import { serviceLabel, VEHICLE_LABEL } from "@/shared"
+import { useThemeColors } from "@/theme"
 import { peso } from "@/utils/format"
 
 export default function RiderRequests() {
   const { user } = useAuth()
   const { bookings, acceptBooking, rejectBooking } = useBookings()
+  const colors = useThemeColors()
 
   const open = bookings
     .filter((booking) => booking.status === "searching")
@@ -34,8 +37,15 @@ export default function RiderRequests() {
       ) : (
         open.map((booking) => (
           <Card key={booking.id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
+            <CardHeader className="flex-row items-center gap-3 pb-2">
+              <View className="size-9 items-center justify-center rounded-full bg-secondary">
+                <ServiceIcon
+                  type={booking.bookingType ?? "ride"}
+                  size={18}
+                  color={colors.foreground}
+                />
+              </View>
+              <CardTitle className="flex-1 text-base">
                 {booking.pickup.name} → {booking.dropoff.name}
               </CardTitle>
             </CardHeader>

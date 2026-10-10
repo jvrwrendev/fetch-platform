@@ -1,6 +1,6 @@
+import { api } from "@convex/_generated/api"
+import { convex } from "@/lib/convex"
 import type { Booking, BookingType, TripStatus } from "@/lib/types"
-import { BOOKINGS } from "@/data/mock/generate"
-import { delay } from "./client"
 import type { Paginated } from "./passengers"
 
 export interface BookingQuery {
@@ -17,11 +17,13 @@ export interface BookingQuery {
 
 export const bookingService = {
   async list(query: BookingQuery): Promise<Paginated<Booking>> {
-    let rows = [...BOOKINGS]
+    // Live from the same deployment the apps write to.
+    const rows = (await convex.query(api.admin.allBookings)) as Booking[]
+    let filtered = [...rows]
     const search = query.search?.trim().toLowerCase()
 
     if (search) {
-      rows = rows.filter(
+      filtered = filtered.filter(
         (b) =>
           b.reference.toLowerCase().includes(search) ||
           b.passengerName.toLowerCase().includes(search) ||
@@ -31,22 +33,24 @@ export const bookingService = {
       )
     }
     if (query.status && query.status !== "all") {
-      rows = rows.filter((b) => b.status === query.status)
+      filtered = filtered.filter((b) => b.status === query.status)
     }
     if (query.service && query.service !== "all") {
-      rows = rows.filter((b) => (b.bookingType ?? "ride") === query.service)
+      filtered = filtered.filter(
+        (b) => (b.bookingType ?? "ride") === query.service
+      )
     }
     if (query.from) {
       const from = +new Date(query.from)
-      rows = rows.filter((b) => +new Date(b.createdAt) >= from)
+      filtered = filtered.filter((b) => +new Date(b.createdAt) >= from)
     }
     if (query.to) {
       const to = +new Date(query.to)
-      rows = rows.filter((b) => +new Date(b.createdAt) <= to)
+      filtered = filtered.filter((b) => +new Date(b.createdAt) <= to)
     }
 
     const dir = query.sortDir === "asc" ? -1 : 1
-    rows.sort((a, b) => {
+    filtered.sort((a, b) => {
       switch (query.sort) {
         case "oldest":
           return (+new Date(a.createdAt) - +new Date(b.createdAt)) * dir
@@ -58,8 +62,13 @@ export const bookingService = {
       }
     })
 
-    const total = rows.length
+    const total = filtered.length
     const start = (query.page - 1) * query.pageSize
-    return delay({ items: rows.slice(start, start + query.pageSize), total, page: query.page, pageSize: query.pageSize })
+    return {
+      items: filtered.slice(start, start + query.pageSize),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+    }
   },
 }

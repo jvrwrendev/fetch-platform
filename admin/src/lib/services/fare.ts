@@ -1,7 +1,8 @@
-import type { FareConfig, FareQuote } from "@/lib/types"
-import { DEFAULT_FARE_CONFIG } from "@/data/mock/fare"
+import { api } from "@convex/_generated/api"
+import { convex } from "@/lib/convex"
 import { quoteFare } from "@/lib/fare"
-import { delay, failure } from "./client"
+import type { FareConfig, FareQuote } from "@/lib/types"
+import { failure } from "./client"
 
 function validate(config: FareConfig): string | null {
   if (!Number.isFinite(config.base) || config.base < 0) {
@@ -26,36 +27,38 @@ function validate(config: FareConfig): string | null {
   return null
 }
 
-let currentConfig: FareConfig = structuredClone(DEFAULT_FARE_CONFIG)
-
+/** The rate card lives in Convex, so an edit here is platform-wide. */
 export const fareService = {
   async getRates(): Promise<FareConfig> {
-    return delay(currentConfig)
+    return (await convex.query(api.admin.getFareConfig)) as FareConfig
   },
 
   async updateRates(patch: Partial<FareConfig>): Promise<FareConfig> {
+    const current = (await convex.query(api.admin.getFareConfig)) as FareConfig
     const next: FareConfig = {
-      base: patch.base ?? currentConfig.base,
-      perKm: patch.perKm ?? currentConfig.perKm,
-      bookingFee: patch.bookingFee ?? currentConfig.bookingFee,
-      minFare: patch.minFare ?? currentConfig.minFare,
-      surgeMultiplier: patch.surgeMultiplier ?? currentConfig.surgeMultiplier,
+      base: patch.base ?? current.base,
+      perKm: patch.perKm ?? current.perKm,
+      bookingFee: patch.bookingFee ?? current.bookingFee,
+      minFare: patch.minFare ?? current.minFare,
+      surgeMultiplier: patch.surgeMultiplier ?? current.surgeMultiplier,
     }
     const error = validate(next)
     if (error) return failure(error)
-    currentConfig = next
-    return delay(currentConfig, 300)
+    return (await convex.mutation(api.admin.setFareConfig, next)) as FareConfig
   },
 
   async resetRates(): Promise<FareConfig> {
-    currentConfig = structuredClone(DEFAULT_FARE_CONFIG)
-    return delay(currentConfig, 200)
+    return (await convex.mutation(
+      api.admin.resetFareConfig,
+      {}
+    )) as FareConfig
   },
 
   async quote(km: number): Promise<FareQuote> {
     if (!Number.isFinite(km) || km < 0) {
       return failure("Distance must be zero or greater.")
     }
-    return delay(quoteFare(currentConfig, km), 150)
+    const config = (await convex.query(api.admin.getFareConfig)) as FareConfig
+    return quoteFare(config, km)
   },
 }

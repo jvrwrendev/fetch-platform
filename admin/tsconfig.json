@@ -22,6 +22,7 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@convex/*": ["../frontend/convex/*"],
       "@fetch/shared": ["../shared/src/index.ts"]
     }
   },

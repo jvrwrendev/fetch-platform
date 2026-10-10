@@ -2,20 +2,24 @@
 
 A ride-hailing platform for Bukidnon, rebuilt as a workspace monorepo: one
 shared domain core, an Expo app for passengers and riders, a Vite web console
-for admins, and a skeleton for the backend that isn't written yet.
+for admins, and a **live Convex backend**.
 
-**This build is mock-only.** There is no server and no database — every screen
-reads from the shared mock world in `shared/` and the ride lifecycle is
-simulated on the client. See [`backend/README.md`](./backend/README.md).
+**Connected.** Bookings, chat and notifications run against a real Convex
+deployment, so a request made in the passenger app shows up in the rider app
+and the admin console in real time. `shared/` stays the domain source of truth
+(types, fare engine, geo helpers), and the mock world is seeded into the
+database rather than hard-coded into the screens. The `backend/` folder is still
+the placeholder for a conventional HTTP service — it is not what the apps talk
+to. See [`backend/README.md`](./backend/README.md).
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
-| `shared/` | The single source of truth: domain types, the fare engine, geo helpers, and the mock world. Consumed by every app. |
-| `frontend/` | The Expo app (Expo Router + NativeWind + shadcn-style components) — the passenger and rider experiences, for a phone or the browser. |
-| `admin/` | The web admin console (Vite + React + shadcn-style UI) — desktop tables, charts and the Leaflet live map. Browser only. |
-| `backend/` | A skeleton: the module/config/database/middleware/routes tree a real service would grow into. No service runs yet. |
+| `shared/` | The single source of truth: domain types, the fare engine, geo helpers, and the seed world. Consumed by every app. |
+| `frontend/` | The Expo app (Expo Router + NativeWind + shadcn-style components) — passenger and rider, for a phone or the browser — plus `frontend/convex/`, the live backend. |
+| `admin/` | The web admin console (Vite + React + shadcn-style UI) — desktop tables, charts and the Leaflet live map, reading the same deployment. Browser only. |
+| `backend/` | A skeleton: the module/config/database/middleware/routes tree a real HTTP service would grow into. No service runs yet. |
 
 `shared`, `backend` and `admin` are npm workspaces. `frontend/` installs on its
 own so the Expo bundle gets its own React Native dependency tree, isolated from
@@ -52,11 +56,16 @@ a real backend would replace.
 ```bash
 npm run install:all        # installs root workspaces + frontend/
 
+# Convex backend (once): copy frontend/.env.example -> frontend/.env.local,
+# fill in CONVEX_DEPLOY_KEY + EXPO_PUBLIC_CONVEX_URL, then push:
+npm --prefix frontend exec convex dev --once
+npm --prefix frontend exec convex run seed:reset   # load the demo world
+
 # Expo app (passenger + rider)
 npm run dev:mobile         # Metro; press w for web, a for Android
 npm run dev:mobile:web     # straight to the browser
 
-# Web admin console
+# Web admin console (copy admin/.env.example -> admin/.env.local first)
 npm run dev:admin          # Vite dev server -> http://localhost:5173
 ```
 

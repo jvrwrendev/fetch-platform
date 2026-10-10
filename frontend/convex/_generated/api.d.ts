@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as bookings from "../bookings.js";
+import type * as directory from "../directory.js";
 import type * as health from "../health.js";
 import type * as messages from "../messages.js";
 import type * as notifications from "../notifications.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   bookings: typeof bookings;
+  directory: typeof directory;
   health: typeof health;
   messages: typeof messages;
   notifications: typeof notifications;

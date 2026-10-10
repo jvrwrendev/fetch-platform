@@ -132,6 +132,21 @@ export default defineSchema({
     value: v.any(),
   }).index("by_key", ["key"]),
 
+  /**
+   * The directory: the broader passenger and rider population the admin
+   * console browses. Stored as whole documents (`data`) because these rows are
+   * the shared mock's shape, not a second domain model.
+   */
+  passengers: defineTable({
+    id: v.string(),
+    data: v.any(),
+  }).index("by_app_id", ["id"]),
+
+  riders: defineTable({
+    id: v.string(),
+    data: v.any(),
+  }).index("by_app_id", ["id"]),
+
   /** Deployment marker used by the health check. */
   appMeta: defineTable({
     key: v.string(),

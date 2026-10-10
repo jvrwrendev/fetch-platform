@@ -1,6 +1,6 @@
+import { api } from "@convex/_generated/api"
+import { convex } from "@/lib/convex"
 import type { Rider, RiderApproval, RiderStatus } from "@/lib/types"
-import { RIDERS } from "@/data/mock/generate"
-import { delay } from "./client"
 import type { Paginated } from "./passengers"
 
 export interface RiderQuery {
@@ -13,9 +13,19 @@ export interface RiderQuery {
   pageSize: number
 }
 
+/** Fetch the whole directory, seeding it on a fresh deployment. */
+async function allRiders(): Promise<Rider[]> {
+  let rows = (await convex.query(api.directory.listRiders)) as Rider[]
+  if (rows.length === 0) {
+    await convex.mutation(api.directory.seed, {})
+    rows = (await convex.query(api.directory.listRiders)) as Rider[]
+  }
+  return rows
+}
+
 export const riderService = {
   async list(query: RiderQuery): Promise<Paginated<Rider>> {
-    let rows = [...RIDERS]
+    let rows = [...(await allRiders())]
     const search = query.search?.trim().toLowerCase()
 
     if (search) {
@@ -53,26 +63,29 @@ export const riderService = {
 
     const total = rows.length
     const start = (query.page - 1) * query.pageSize
-    return delay({ items: rows.slice(start, start + query.pageSize), total, page: query.page, pageSize: query.pageSize })
+    return {
+      items: rows.slice(start, start + query.pageSize),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+    }
   },
 
   async setApproval(id: string, approval: RiderApproval): Promise<Rider> {
-    const target = RIDERS.find((r) => r.id === id)
-    if (!target) return Promise.reject(new Error("Rider not found"))
-    target.approval = approval
-    if (approval !== "approved") {
-      target.status = "inactive"
-      target.availability = "offline"
-    }
-    return delay(target, 120)
+    const next = await convex.mutation(api.directory.setRiderApproval, {
+      id,
+      approval,
+    })
+    if (!next) throw new Error("Rider not found")
+    return next as unknown as Rider
   },
 
   async setStatus(id: string, status: RiderStatus): Promise<Rider> {
-    const target = RIDERS.find((r) => r.id === id)
-    if (!target) return Promise.reject(new Error("Rider not found"))
-    target.status = status
-    if (status !== "active") target.availability = "offline"
-    target.lastActiveAt = new Date().toISOString()
-    return delay(target, 120)
+    const next = await convex.mutation(api.directory.setRiderStatus, {
+      id,
+      status,
+    })
+    if (!next) throw new Error("Rider not found")
+    return next as unknown as Rider
   },
 }

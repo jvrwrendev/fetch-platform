@@ -1,6 +1,6 @@
+import { api } from "@convex/_generated/api"
+import { convex } from "@/lib/convex"
 import type { Passenger, PassengerStatus } from "@/lib/types"
-import { PASSENGERS } from "@/data/mock/generate"
-import { delay } from "./client"
 
 export interface PassengerQuery {
   search?: string
@@ -19,9 +19,19 @@ export interface Paginated<T> {
   pageSize: number
 }
 
+/** Fetch the whole directory, seeding it on a fresh deployment. */
+async function allPassengers(): Promise<Passenger[]> {
+  let rows = (await convex.query(api.directory.listPassengers)) as Passenger[]
+  if (rows.length === 0) {
+    await convex.mutation(api.directory.seed, {})
+    rows = (await convex.query(api.directory.listPassengers)) as Passenger[]
+  }
+  return rows
+}
+
 export const passengerService = {
   async list(query: PassengerQuery): Promise<Paginated<Passenger>> {
-    let rows = [...PASSENGERS]
+    let rows = [...(await allPassengers())]
     const search = query.search?.trim().toLowerCase()
 
     if (search) {
@@ -58,14 +68,20 @@ export const passengerService = {
 
     const total = rows.length
     const start = (query.page - 1) * query.pageSize
-    return delay({ items: rows.slice(start, start + query.pageSize), total, page: query.page, pageSize: query.pageSize })
+    return {
+      items: rows.slice(start, start + query.pageSize),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+    }
   },
 
   async setStatus(id: string, status: PassengerStatus): Promise<Passenger> {
-    const target = PASSENGERS.find((p) => p.id === id)
-    if (!target) return Promise.reject(new Error("Passenger not found"))
-    target.status = status
-    target.lastActiveAt = new Date().toISOString()
-    return delay(target, 120)
+    const next = await convex.mutation(api.directory.setPassengerStatus, {
+      id,
+      status,
+    })
+    if (!next) throw new Error("Passenger not found")
+    return next as unknown as Passenger
   },
 }

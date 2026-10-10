@@ -5,8 +5,7 @@ import { v } from "convex/values"
 import {
   DEFAULT_FARE_CONFIG,
   distanceKm,
-  estimateErrandFare,
-  estimateFare,
+  quoteFare,
   type FareConfig,
 } from "../../shared/src/index"
 
@@ -54,7 +53,7 @@ async function getConfig(ctx: MutationCtx | QueryCtx): Promise<FareConfig> {
     .withIndex("by_key", (q) => q.eq("key", "fareConfig"))
     .unique()
   const value = row?.value as FareConfig | undefined
-  return value?.base !== undefined ? value : DEFAULT_FARE_CONFIG
+  return value?.baseFare !== undefined ? value : DEFAULT_FARE_CONFIG
 }
 
 /** Drop a notice into a user's bell. */
@@ -164,18 +163,15 @@ export const create = mutation({
     const config = await getConfig(ctx)
     const distance = distanceKm(args.pickup, args.dropoff)
     const type = args.bookingType ?? "ride"
-    const isErrand = type === "pabili" || type === "padala"
-    const quote = isErrand
-      ? estimateErrandFare(args.pickup, args.dropoff, type)
-      : estimateFare(args.pickup, args.dropoff, config)
-    const fare = isErrand
-      ? {
-          base: (quote as ReturnType<typeof estimateErrandFare>).base +
-            (quote as ReturnType<typeof estimateErrandFare>).stopFee,
-          distance: quote.distanceCost,
-          total: quote.total,
-        }
-      : { base: quote.base, distance: quote.distanceCost, total: quote.total }
+    // Rides and errands share one tariff; the server picks the price from the
+    // live rate card at the moment the request lands (so night applies by the
+    // server's clock, not the client's).
+    const quote = quoteFare(config, distance)
+    const fare = {
+      base: quote.baseFare,
+      distance: quote.tier1Charge + quote.tier2Charge,
+      total: quote.total,
+    }
 
     const now = Date.now()
     const id = `b${now}`

@@ -2,26 +2,28 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
-  DEFAULT_ERRAND_FARE_CONFIG,
   DEFAULT_FARE_CONFIG,
+  billedKm,
   distanceKm,
-  estimateErrandFare,
   estimateFare,
   haversineKm,
-  quoteErrand,
+  isNightTime,
   quoteFare,
 } from "../src/fare.ts"
-import type { GeoPoint } from "../src/types.ts"
+import type { FareConfig, GeoPoint } from "../src/types.ts"
 
-const ORIGIN: GeoPoint = {
-  name: "Origin",
-  address: "0, 0",
-  lat: 0,
-  lng: 0,
-}
-
+const ORIGIN: GeoPoint = { name: "Origin", address: "0, 0", lat: 0, lng: 0 }
 const NEAR: GeoPoint = { name: "Near", address: "a", lat: 14.5995, lng: 120.9842 }
 const FAR: GeoPoint = { name: "Far", address: "b", lat: 15.5, lng: 121.5 }
+
+/** A fixed Manila (UTC+8) time, so the night-window tests are timezone-proof. */
+function at(hour: number, minute = 0): Date {
+  return new Date(Date.UTC(2026, 9, 10, (hour - 8 + 24) % 24, minute, 0, 0))
+}
+const NOON = at(12)
+const NIGHT = at(23)
+
+const DAY: FareConfig = { ...DEFAULT_FARE_CONFIG, nightRideEnabled: false }
 
 test("haversineKm returns 0 for the same point", () => {
   assert.equal(haversineKm(ORIGIN, ORIGIN), 0)
@@ -40,97 +42,99 @@ test("distanceKm clamps identical points to the 0.5 km minimum", () => {
   assert.equal(distanceKm(ORIGIN, ORIGIN), 0.5)
 })
 
-test("quoteFare adds base, distance and booking fee with no surge", () => {
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, 5)
-  assert.equal(quote.base, 40)
-  assert.equal(quote.distanceCost, 60)
-  assert.equal(quote.surgeAdjustment, 0)
-  assert.equal(quote.minimumTopUp, 0)
-  assert.equal(quote.bookingFee, 15)
-  assert.equal(quote.total, 115)
+test("billedKm rounds partial kilometres up", () => {
+  assert.equal(billedKm(6.3), 7)
+  assert.equal(billedKm(6.0), 6)
+  assert.equal(billedKm(0.1), 1)
+  assert.equal(billedKm(0), 0)
 })
 
-test("quoteFare tops up to the minimum fare", () => {
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, 0.5)
-  assert.equal(quote.subtotal, 46)
-  assert.equal(quote.minimumTopUp, 4)
-  assert.equal(quote.total, 65)
+test("up to 5 km is the flat base fare", () => {
+  for (const km of [0.5, 3, 5]) {
+    const q = quoteFare(DAY, km, NOON)
+    assert.equal(q.billedKm, km === 0.5 ? 1 : km)
+    assert.equal(q.baseFare, 60)
+    assert.equal(q.tier1Charge, 0)
+    assert.equal(q.tier2Charge, 0)
+    assert.equal(q.total, 60)
+  }
 })
 
-test("quoteFare clamps negative distance to zero", () => {
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, -5)
-  assert.equal(quote.distanceCost, 0)
-  assert.equal(quote.subtotal, 40)
-  assert.equal(quote.minimumTopUp, 10)
-  assert.equal(quote.total, 65)
+test("tier 1 charges ₱10 a km over the base, up to 10 km", () => {
+  const q = quoteFare(DAY, 6.3, NOON) // billed 7
+  assert.equal(q.billedKm, 7)
+  assert.equal(q.tier1Km, 2)
+  assert.equal(q.tier1Charge, 20)
+  assert.equal(q.tier2Charge, 0)
+  assert.equal(q.daytimeTotal, 80)
+
+  const edge = quoteFare(DAY, 10, NOON)
+  assert.equal(edge.tier1Km, 5)
+  assert.equal(edge.tier1Charge, 50)
+  assert.equal(edge.daytimeTotal, 110)
 })
 
-test("quoteFare applies the surge multiplier to the subtotal", () => {
-  const quote = quoteFare(
-    { ...DEFAULT_FARE_CONFIG, surgeMultiplier: 1.5 },
-    10
-  )
-  assert.equal(quote.subtotal, 160)
-  assert.equal(quote.surgeAdjustment, 80)
-  assert.equal(quote.total, 255)
+test("tier 2 charges ₱20 a km beyond 10 km, off the ₱110 fixed amount", () => {
+  const q = quoteFare(DAY, 12.4, NOON) // billed 13
+  assert.equal(q.billedKm, 13)
+  assert.equal(q.tier1Charge, 50)
+  assert.equal(q.tier2Km, 3)
+  assert.equal(q.tier2Charge, 60)
+  assert.equal(q.daytimeTotal, 170)
 })
 
-test("estimateFare matches quoteFare over the rounded distance", () => {
-  const estimate = estimateFare(NEAR, FAR)
-  const quote = quoteFare(DEFAULT_FARE_CONFIG, distanceKm(NEAR, FAR))
+test("the tier boundary is inclusive of the lower tier", () => {
+  // Just over 10 km bills as 11 and starts tier 2.
+  const q = quoteFare(DAY, 10.0001, NOON)
+  assert.equal(q.billedKm, 11)
+  assert.equal(q.tier2Km, 1)
+  assert.equal(q.daytimeTotal, 130)
+})
+
+test("night is off by default during the day", () => {
+  const q = quoteFare(DEFAULT_FARE_CONFIG, 5, NOON)
+  assert.equal(q.nightApplied, false)
+  assert.equal(q.nightSurcharge, 0)
+  assert.equal(q.total, 60)
+})
+
+test("a flat night fee is added between 22:00 and 05:00", () => {
+  const q = quoteFare(DEFAULT_FARE_CONFIG, 5, NIGHT)
+  assert.equal(q.nightApplied, true)
+  assert.equal(q.nightMode, "flat")
+  assert.equal(q.nightValue, 30)
+  assert.equal(q.nightSurcharge, 30)
+  assert.equal(q.total, 90)
+})
+
+test("a percentage night boost multiplies the daytime total", () => {
+  const percent: FareConfig = {
+    ...DEFAULT_FARE_CONFIG,
+    nightMode: "percentage",
+    nightPercent: 20,
+  }
+  const q = quoteFare(percent, 12.4, at(23, 15)) // daytime 170
+  assert.equal(q.daytimeTotal, 170)
+  assert.equal(q.nightSurcharge, 34)
+  assert.equal(q.total, 204)
+})
+
+test("the night window wraps midnight and is exclusive at the end", () => {
+  assert.equal(isNightTime(DEFAULT_FARE_CONFIG, at(21, 59)), false)
+  assert.equal(isNightTime(DEFAULT_FARE_CONFIG, at(22, 0)), true)
+  assert.equal(isNightTime(DEFAULT_FARE_CONFIG, at(0, 30)), true)
+  assert.equal(isNightTime(DEFAULT_FARE_CONFIG, at(4, 59)), true)
+  assert.equal(isNightTime(DEFAULT_FARE_CONFIG, at(5, 0)), false)
+})
+
+test("disabling the night ride removes the surcharge even at night", () => {
+  const q = quoteFare(DAY, 5, NIGHT)
+  assert.equal(q.nightApplied, false)
+  assert.equal(q.total, 60)
+})
+
+test("estimateFare prices from two points at the given time", () => {
+  const estimate = estimateFare(NEAR, FAR, DAY, NOON)
+  const quote = quoteFare(DAY, distanceKm(NEAR, FAR), NOON)
   assert.deepEqual(estimate, quote)
-})
-
-test("estimateFare costs more for a longer trip", () => {
-  const near = estimateFare(ORIGIN, NEAR)
-  const far = estimateFare(ORIGIN, FAR)
-  assert.ok(far.total > near.total)
-  assert.ok(far.distanceCost >= near.distanceCost)
-})
-
-test("surge overrides do not mutate the default config", () => {
-  const before = DEFAULT_FARE_CONFIG.surgeMultiplier
-  quoteFare({ ...DEFAULT_FARE_CONFIG, surgeMultiplier: 1.5 }, 5)
-  assert.equal(DEFAULT_FARE_CONFIG.surgeMultiplier, before)
-})
-
-test("quoteErrand adds base, distance and the stop fee", () => {
-  const quote = quoteErrand("pabili", 4)
-  assert.equal(quote.base, 60)
-  assert.equal(quote.distanceCost, 48)
-  assert.equal(quote.stopFee, 25)
-  assert.equal(quote.subtotal, 133)
-  assert.equal(quote.minimumTopUp, 0)
-  assert.equal(quote.bookingFee, 15)
-  assert.equal(quote.total, 148)
-})
-
-test("quoteErrand clamps negative distance to zero", () => {
-  const quote = quoteErrand("padala", -3)
-  assert.equal(quote.distanceCost, 0)
-  assert.equal(quote.subtotal, 85)
-  assert.equal(quote.total, 100)
-})
-
-test("quoteErrand tops up to the errand minimum", () => {
-  const quote = quoteErrand("pabili", 1, {
-    ...DEFAULT_ERRAND_FARE_CONFIG,
-    minFare: 200,
-  })
-  assert.equal(quote.subtotal, 97)
-  assert.equal(quote.minimumTopUp, 103)
-  assert.equal(quote.total, 215)
-})
-
-test("estimateErrandFare matches quoteErrand over the rounded distance", () => {
-  const estimate = estimateErrandFare(NEAR, FAR, "padala")
-  const quote = quoteErrand("padala", distanceKm(NEAR, FAR))
-  assert.deepEqual(estimate, quote)
-})
-
-test("errands are priced on their own tariff", () => {
-  const ride = estimateFare(NEAR, FAR)
-  const errand = estimateErrandFare(NEAR, FAR, "pabili")
-  assert.ok(errand.total > ride.total)
-  assert.equal(errand.bookingType, "pabili")
 })

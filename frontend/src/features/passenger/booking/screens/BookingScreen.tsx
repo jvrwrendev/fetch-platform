@@ -25,14 +25,12 @@ import {
   DEFAULT_FARE_CONFIG,
   LOCATIONS,
   PAYMENT_METHODS,
-  estimateErrandFare,
   estimateFare,
   isInServiceArea,
   resolveBookingType,
   type Booking,
   type BookingErrandItem,
   type BookingType,
-  type ErrandType,
   type FareConfig,
   type GeoPoint,
   type PaymentMethod,
@@ -96,18 +94,10 @@ export default function BookRide() {
 
   const steps = STEPS_BY_TYPE[bookingType]
 
-  const estimate = useMemo(
+  const quote = useMemo(
     () => (pickup && dropoff ? estimateFare(pickup, dropoff, fareConfig) : null),
     [pickup, dropoff, fareConfig]
   )
-  const errand = useMemo(
-    () =>
-      bookingType !== "ride" && pickup && dropoff
-        ? estimateErrandFare(pickup, dropoff, bookingType as ErrandType)
-        : null,
-    [bookingType, pickup, dropoff]
-  )
-  const quote = bookingType === "ride" ? estimate : errand
 
   const markers = useMemo(() => {
     const list: MapMarker[] = []
@@ -205,24 +195,14 @@ export default function BookRide() {
   const back = () => setStep((prev) => Math.max(prev - 1, 0))
 
   const confirm = () => {
-    if (!user || !pickup || !dropoff) return
-    if (!quote) return
+    if (!user || !pickup || !dropoff || !quote) return
 
-    let fare: Booking["fare"]
-    if (bookingType === "ride" && estimate) {
-      fare = {
-        base: estimate.base,
-        distance: estimate.distanceCost,
-        total: estimate.total,
-      }
-    } else if (errand) {
-      fare = {
-        base: errand.base + errand.stopFee,
-        distance: errand.distanceCost,
-        total: errand.total,
-      }
-    } else {
-      return
+    // Whatever we send is advisory — the server prices the trip itself from
+    // the live rate card — but the fare we store mirrors its lines.
+    const fare: Booking["fare"] = {
+      base: quote.baseFare,
+      distance: quote.tier1Charge + quote.tier2Charge,
+      total: quote.total,
     }
 
     const cleanItems = items
@@ -437,55 +417,40 @@ export default function BookRide() {
                     value={dropoff.name}
                   />
                   <FareRow label="Distance" value={`${quote.distanceKm} km`} />
-                  {bookingType === "ride" && estimate ? (
-                    <>
-                      <FareRow label="Base fare" value={peso(estimate.base)} />
-                      <FareRow
-                        label="Distance fare"
-                        value={peso(estimate.distanceCost)}
-                      />
-                      {estimate.surgeAdjustment > 0 ? (
-                        <FareRow
-                          label="Surge"
-                          value={peso(estimate.surgeAdjustment)}
-                        />
-                      ) : null}
-                      {estimate.minimumTopUp > 0 ? (
-                        <FareRow
-                          label="Minimum fare top-up"
-                          value={peso(estimate.minimumTopUp)}
-                        />
-                      ) : null}
-                      <FareRow
-                        label="Booking fee"
-                        value={peso(estimate.bookingFee)}
-                      />
-                    </>
+                  <FareRow label="Billed distance" value={`${quote.billedKm} km`} />
+                  <FareRow label="Base fare" value={peso(quote.baseFare)} />
+                  {quote.tier1Charge > 0 ? (
+                    <FareRow
+                      label={`Tier 1 · ${quote.tier1Km} km`}
+                      value={peso(quote.tier1Charge)}
+                    />
                   ) : null}
-                  {bookingType !== "ride" && errand ? (
-                    <>
-                      <FareRow label="Base fee" value={peso(errand.base)} />
-                      <FareRow label="Stop fee" value={peso(errand.stopFee)} />
-                      <FareRow
-                        label="Distance fare"
-                        value={peso(errand.distanceCost)}
-                      />
-                      {errand.minimumTopUp > 0 ? (
-                        <FareRow
-                          label="Minimum fare top-up"
-                          value={peso(errand.minimumTopUp)}
-                        />
-                      ) : null}
-                      <FareRow
-                        label="Booking fee"
-                        value={peso(errand.bookingFee)}
-                      />
-                    </>
+                  {quote.tier2Charge > 0 ? (
+                    <FareRow
+                      label={`Tier 2 · ${quote.tier2Km} km`}
+                      value={peso(quote.tier2Charge)}
+                    />
                   ) : null}
                   <View className="flex-row items-center justify-between border-t border-border pt-2">
-                    <Text className="text-sm font-medium">
-                      {bookingType === "ride" ? "Estimated fare" : "Estimated total"}
+                    <Text className="text-sm text-muted-foreground">
+                      Daytime total
                     </Text>
+                    <Text className="text-sm font-medium">
+                      {peso(quote.daytimeTotal)}
+                    </Text>
+                  </View>
+                  {quote.nightApplied ? (
+                    <FareRow
+                      label={
+                        quote.nightMode === "flat"
+                          ? `Night ride · flat +${peso(quote.nightValue)}`
+                          : `Night ride · +${quote.nightValue}%`
+                      }
+                      value={`+${peso(quote.nightSurcharge)}`}
+                    />
+                  ) : null}
+                  <View className="flex-row items-center justify-between border-t border-border pt-2">
+                    <Text className="text-sm font-medium">Total fare</Text>
                     <Text className="text-sm font-semibold">
                       {peso(quote.total)}
                     </Text>

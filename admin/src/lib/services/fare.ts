@@ -5,24 +5,51 @@ import type { FareConfig, FareQuote } from "@/lib/types"
 import { failure } from "./client"
 
 function validate(config: FareConfig): string | null {
-  if (!Number.isFinite(config.base) || config.base < 0) {
+  if (!Number.isFinite(config.baseFare) || config.baseFare < 0) {
     return "Base fare must be zero or greater."
   }
-  if (!Number.isFinite(config.perKm) || config.perKm < 0) {
-    return "Per-km rate must be zero or greater."
+  if (!Number.isFinite(config.baseDistanceKm) || config.baseDistanceKm <= 0) {
+    return "Base distance must be greater than zero."
   }
-  if (!Number.isFinite(config.bookingFee) || config.bookingFee < 0) {
-    return "Booking fee must be zero or greater."
+  if (!Number.isFinite(config.tier1RatePerKm) || config.tier1RatePerKm < 0) {
+    return "Tier 1 rate must be zero or greater."
   }
-  if (!Number.isFinite(config.minFare) || config.minFare < 0) {
-    return "Minimum fare must be zero or greater."
+  if (!Number.isFinite(config.tier1MaxKm) || config.tier1MaxKm <= config.baseDistanceKm) {
+    return "Tier 1 must end after the base distance."
+  }
+  if (!Number.isFinite(config.tier2RatePerKm) || config.tier2RatePerKm < 0) {
+    return "Tier 2 rate must be zero or greater."
   }
   if (
-    !Number.isFinite(config.surgeMultiplier) ||
-    config.surgeMultiplier < 1 ||
-    config.surgeMultiplier > 3
+    !Number.isInteger(config.nightStartHour) ||
+    config.nightStartHour < 0 ||
+    config.nightStartHour > 23
   ) {
-    return "Surge multiplier must be between 1.0 and 3.0."
+    return "Night start hour must be between 0 and 23."
+  }
+  if (
+    !Number.isInteger(config.nightEndHour) ||
+    config.nightEndHour < 0 ||
+    config.nightEndHour > 23
+  ) {
+    return "Night end hour must be between 0 and 23."
+  }
+  if (
+    !Number.isFinite(config.timezoneOffsetHours) ||
+    config.timezoneOffsetHours < -12 ||
+    config.timezoneOffsetHours > 14
+  ) {
+    return "Timezone offset must be between -12 and 14."
+  }
+  if (config.nightMode === "flat") {
+    if (!Number.isFinite(config.nightFlatFee) || config.nightFlatFee < 0) {
+      return "Night flat fee must be zero or greater."
+    }
+  } else if (
+    !Number.isFinite(config.nightPercent) ||
+    config.nightPercent < 0
+  ) {
+    return "Night percentage must be zero or greater."
   }
   return null
 }
@@ -35,13 +62,7 @@ export const fareService = {
 
   async updateRates(patch: Partial<FareConfig>): Promise<FareConfig> {
     const current = (await convex.query(api.admin.getFareConfig)) as FareConfig
-    const next: FareConfig = {
-      base: patch.base ?? current.base,
-      perKm: patch.perKm ?? current.perKm,
-      bookingFee: patch.bookingFee ?? current.bookingFee,
-      minFare: patch.minFare ?? current.minFare,
-      surgeMultiplier: patch.surgeMultiplier ?? current.surgeMultiplier,
-    }
+    const next: FareConfig = { ...current, ...patch }
     const error = validate(next)
     if (error) return failure(error)
     return (await convex.mutation(api.admin.setFareConfig, next)) as FareConfig
@@ -54,11 +75,11 @@ export const fareService = {
     )) as FareConfig
   },
 
-  async quote(km: number): Promise<FareQuote> {
+  async quote(km: number, at?: Date | number): Promise<FareQuote> {
     if (!Number.isFinite(km) || km < 0) {
       return failure("Distance must be zero or greater.")
     }
     const config = (await convex.query(api.admin.getFareConfig)) as FareConfig
-    return quoteFare(config, km)
+    return quoteFare(config, km, at)
   },
 }

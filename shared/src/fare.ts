@@ -1,20 +1,39 @@
-import type { BookingType, FareConfig, FareQuote, GeoPoint, PaymentMethod } from "./types"
+import type {
+  BookingType,
+  FareConfig,
+  FareQuote,
+  GeoPoint,
+  PaymentMethod,
+} from "./types"
 
 /**
- * The motorcycle tariff. FETCH runs motorcycle taxis only, so there is one
- * rate rather than a rate per vehicle class.
+ * The FETCH tariff.
+ *
+ * A base fare covers the first stretch of every trip, then two distance tiers
+ * price the rest. Every trip is billed in whole kilometres — a trip of 6.3 km
+ * is charged as 7 km — and an optional night surcharge applies automatically
+ * between the configured hours when the admin has switched it on.
+ *
+ * This is the one place a price is decided. The phone, the browser, the admin
+ * console and the server all import it, so a change has a single definition.
  */
 export const DEFAULT_FARE_CONFIG: FareConfig = {
-  base: 40,
-  perKm: 12,
-  bookingFee: 15,
-  minFare: 50,
-  surgeMultiplier: 1,
+  baseFare: 60,
+  baseDistanceKm: 5,
+  tier1RatePerKm: 10,
+  tier1MaxKm: 10,
+  tier2RatePerKm: 20,
+
+  nightRideEnabled: true,
+  nightStartHour: 22,
+  nightEndHour: 5,
+  timezoneOffsetHours: 8,
+  nightMode: "flat",
+  nightFlatFee: 30,
+  nightPercent: 20,
 }
 
-export const SURGE_MIN = 1
-export const SURGE_MAX = 3
-export const SURGE_STEP = 0.1
+export const NIGHT_MODES = ["flat", "percentage"] as const
 
 export const PAYMENT_METHODS: PaymentMethod[] = ["cash", "ewallet"]
 
@@ -33,109 +52,87 @@ export function distanceKm(pickup: GeoPoint, dropoff: GeoPoint): number {
   return Math.round(Math.max(haversineKm(pickup, dropoff), 0.5) * 10) / 10
 }
 
-export function quoteFare(config: FareConfig, km: number): FareQuote {
-  const base = config.base
-  const distanceCost = Math.round(Math.max(km, 0) * config.perKm)
-  const subtotal = base + distanceCost
-  const surgeAdjustment = Math.round(subtotal * (config.surgeMultiplier - 1))
-  const afterSurge = subtotal + surgeAdjustment
-  const minimumTopUp = Math.max(config.minFare - afterSurge, 0)
-  const bookingFee = config.bookingFee
-  const total = Math.round(afterSurge + minimumTopUp + bookingFee)
+/** Partial kilometres round up: 6.3 km is billed as 7. */
+export function billedKm(km: number): number {
+  if (!Number.isFinite(km) || km <= 0) return 0
+  return Math.ceil(km)
+}
+
+/**
+ * Whether `at` falls in the night window.
+ *
+ * The window may wrap midnight (the default 22:00–05:00 does), so it is two
+ * comparisons joined by OR rather than a single `start <= hour < end`. The hour
+ * is read in the config's timezone, not the runtime's, so the same trip is
+ * "night" on the phone, in the console and on the server — which runs in UTC.
+ */
+export function isNightTime(
+  config: FareConfig,
+  at: Date | number = Date.now()
+): boolean {
+  if (!config.nightRideEnabled) return false
+  const date = at instanceof Date ? at : new Date(at)
+  const hour =
+    (date.getUTCHours() + config.timezoneOffsetHours + 24) % 24
+  return hour >= config.nightStartHour || hour < config.nightEndHour
+}
+
+/** Price one trip. `at` is the ride time; it defaults to now. */
+export function quoteFare(
+  config: FareConfig,
+  km: number,
+  at: Date | number = Date.now()
+): FareQuote {
+  const billed = billedKm(km)
+  const baseFare = config.baseFare
+
+  const tier1Km = Math.max(
+    Math.min(billed, config.tier1MaxKm) - config.baseDistanceKm,
+    0
+  )
+  const tier2Km = Math.max(billed - config.tier1MaxKm, 0)
+  const tier1Charge = tier1Km * config.tier1RatePerKm
+  const tier2Charge = tier2Km * config.tier2RatePerKm
+  const daytimeTotal = baseFare + tier1Charge + tier2Charge
+
+  const when = at instanceof Date ? at : new Date(at)
+  const nightApplied = isNightTime(config, when)
+  const nightValue = config.nightMode === "flat" ? config.nightFlatFee : config.nightPercent
+  const nightSurcharge = nightApplied
+    ? Math.round(
+        config.nightMode === "flat"
+          ? config.nightFlatFee
+          : daytimeTotal * (config.nightPercent / 100)
+      )
+    : 0
 
   return {
     distanceKm: Math.round(Math.max(km, 0) * 10) / 10,
-    base,
-    distanceCost,
-    subtotal,
-    surgeAdjustment,
-    minimumTopUp,
-    bookingFee,
-    total,
+    billedKm: billed,
+    baseFare,
+    tier1Km,
+    tier1Charge,
+    tier2Km,
+    tier2Charge,
+    daytimeTotal,
+    at: when.toISOString(),
+    nightApplied,
+    nightMode: config.nightMode,
+    nightValue,
+    nightSurcharge,
+    total: daytimeTotal + nightSurcharge,
   }
 }
 
-/** Convenience for the rider/passenger app: quote straight from two points. */
+/** Convenience for the app: quote straight from two points. */
 export function estimateFare(
   pickup: GeoPoint,
   dropoff: GeoPoint,
-  config: FareConfig = DEFAULT_FARE_CONFIG
+  config: FareConfig = DEFAULT_FARE_CONFIG,
+  at: Date | number = Date.now()
 ): FareQuote {
-  return quoteFare(config, distanceKm(pickup, dropoff))
+  return quoteFare(config, distanceKm(pickup, dropoff), at)
 }
 
 /** The errand half of {@link BookingType}: pabili and pasugo (padala). */
 export type ErrandType = Exclude<BookingType, "ride">
-
-/**
- * Errand pricing (pabili / pasugo).
- *
- * Errands get their own tariff rather than a vehicle class: the work is the
- * same whichever vehicle turns up, and the shop/collection stop is the part
- * that needs covering. It lives here beside the ride tariff so a rate change
- * still has one home.
- */
-export interface ErrandFareConfig {
-  base: number
-  perKm: number
-  /** Flat fee for the shop/collection stop. */
-  stopFee: number
-  /** Floor on the errand portion, before the booking fee. */
-  minFare: number
-  bookingFee: number
-}
-
-export const DEFAULT_ERRAND_FARE_CONFIG: ErrandFareConfig = {
-  base: 60,
-  perKm: 12,
-  stopFee: 25,
-  minFare: 60,
-  bookingFee: 15,
-}
-
-export interface ErrandQuote {
-  bookingType: ErrandType
-  distanceKm: number
-  base: number
-  distanceCost: number
-  stopFee: number
-  subtotal: number
-  minimumTopUp: number
-  bookingFee: number
-  total: number
-}
-
-/** Price one errand from a distance in km. */
-export function quoteErrand(
-  bookingType: ErrandType,
-  km: number,
-  config: ErrandFareConfig = DEFAULT_ERRAND_FARE_CONFIG
-): ErrandQuote {
-  const distance = Math.max(km, 0)
-  const distanceCost = Math.round(distance * config.perKm)
-  const subtotal = config.base + distanceCost + config.stopFee
-  const minimumTopUp = Math.max(config.minFare - subtotal, 0)
-  const total = Math.round(subtotal + minimumTopUp + config.bookingFee)
-
-  return {
-    bookingType,
-    distanceKm: Math.round(distance * 10) / 10,
-    base: config.base,
-    distanceCost,
-    stopFee: config.stopFee,
-    subtotal,
-    minimumTopUp,
-    bookingFee: config.bookingFee,
-    total,
-  }
-}
-
-/** Convenience for the app: quote an errand straight from two points. */
-export function estimateErrandFare(
-  pickup: GeoPoint,
-  dropoff: GeoPoint,
-  bookingType: ErrandType,
-  config: ErrandFareConfig = DEFAULT_ERRAND_FARE_CONFIG
-): ErrandQuote {
-  return quoteErrand(bookingType, distanceKm(pickup, dropoff), config)
-}

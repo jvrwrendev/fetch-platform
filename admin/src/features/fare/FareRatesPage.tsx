@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import {
-  ArrowRight,
-  Banknote,
-  Bike,
   CircleAlert,
   Loader2,
   MapPin,
-  Percent,
+  Moon,
   RotateCcw,
   Save,
   Sparkles,
@@ -23,7 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -38,19 +35,6 @@ import { distanceKm, quoteFare } from "@/lib/fare"
 import { peso, pesoPrecise } from "@/lib/format"
 import type { FareConfig } from "@/lib/types"
 import { LOCATIONS } from "@fetch/shared"
-import { SURGE_MAX, SURGE_MIN, SURGE_STEP } from "@fetch/shared"
-
-/** The one vehicle class, with a sample trip for the rate card. */
-const VEHICLE = { label: "Motorcycle", icon: Bike, sampleKm: 5, sampleNote: "Typical city hop" }
-
-const SURGE_LABEL = (value: number) =>
-  value <= 1
-    ? "Standard (1.0×)"
-    : value < 1.5
-      ? `Low demand (${value.toFixed(1)}×)`
-      : value < 2.2
-        ? `Peak (${value.toFixed(1)}×)`
-        : `High surge (${value.toFixed(1)}×)`
 
 function parseNum(value: string): number {
   const n = Number(value)
@@ -100,15 +84,139 @@ function NumberField({
   )
 }
 
+/** `22` → `10:00 PM`. */
+function hourLabel(hour: number): string {
+  const suffix = hour < 12 ? "AM" : "PM"
+  const display = hour % 12 === 0 ? 12 : hour % 12
+  return `${display}:00 ${suffix}`
+}
+
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
+
+/**
+ * A live preview of one trip, day or night, priced by the real engine.
+ */
+function TripPreview({ config }: { config: FareConfig }) {
+  const [pickupIdx, setPickupIdx] = useState("0")
+  const [dropoffIdx, setDropoffIdx] = useState("6")
+
+  const pickup = LOCATIONS[Number(pickupIdx)]!
+  const dropoff = LOCATIONS[Number(dropoffIdx)]!
+  const km = distanceKm(pickup, dropoff)
+
+  const day = quoteFare(config, km, new Date(2026, 9, 10, 12, 0, 0))
+  const night = quoteFare(config, km, new Date(2026, 9, 10, 23, 0, 0))
+
+  const rows: { label: string; value: string; muted?: boolean }[] = [
+    { label: "Distance", value: `${day.distanceKm.toFixed(1)} km` },
+    { label: "Billed distance", value: `${day.billedKm} km` },
+    { label: "Base fare", value: pesoPrecise(day.baseFare) },
+  ]
+  if (day.tier1Charge > 0) {
+    rows.push({
+      label: `Tier 1 (${day.tier1Km} km × ${peso(config.tier1RatePerKm)})`,
+      value: pesoPrecise(day.tier1Charge),
+    })
+  }
+  if (day.tier2Charge > 0) {
+    rows.push({
+      label: `Tier 2 (${day.tier2Km} km × ${peso(config.tier2RatePerKm)})`,
+      value: pesoPrecise(day.tier2Charge),
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="size-3.5 text-emerald-500" /> Pickup
+          </Label>
+          <Select value={pickupIdx} onValueChange={(v) => v && setPickupIdx(v)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LOCATIONS.map((l, i) => (
+                <SelectItem key={l.name} value={String(i)}>
+                  {l.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="size-3.5 text-primary" /> Destination
+          </Label>
+          <Select value={dropoffIdx} onValueChange={(v) => v && setDropoffIdx(v)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LOCATIONS.map((l, i) => (
+                <SelectItem key={l.name} value={String(i)}>
+                  {l.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm">
+        {rows.map((row) => (
+          <div key={row.label} className="flex justify-between">
+            <span className="text-muted-foreground">{row.label}</span>
+            <span className="tabular-nums">{row.value}</span>
+          </div>
+        ))}
+        <Separator />
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">Daytime total</span>
+          <span className="font-bold tabular-nums">{pesoPrecise(day.total)}</span>
+        </div>
+
+        <div className="mt-2 space-y-2 rounded-md bg-muted/50 p-3">
+          <div className="flex items-center gap-1.5 text-xs font-medium">
+            <Moon className="size-3.5" /> Night preview (11:00 PM)
+          </div>
+          {night.nightApplied ? (
+            <>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">
+                  {night.nightMode === "flat"
+                    ? `Flat +${peso(night.nightValue)}`
+                    : `+${night.nightValue}%`}
+                </span>
+                <span className="tabular-nums">+{pesoPrecise(night.nightSurcharge)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-semibold">Night total</span>
+                <span className="font-bold tabular-nums">{pesoPrecise(night.total)}</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Night surcharge is off — {pesoPrecise(night.total)} at night too.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        {pickup.name} → {dropoff.name}
+      </p>
+    </div>
+  )
+}
+
 export default function FareRatesPage() {
   const [saved, setSaved] = useState<FareConfig | null>(null)
   const [draft, setDraft] = useState<FareConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [resetting, setResetting] = useState(false)
-
-  const [pickupIdx, setPickupIdx] = useState<string>("0")
-  const [dropoffIdx, setDropoffIdx] = useState<string>("6")
 
   useEffect(() => {
     fareService.getRates().then((config) => {
@@ -122,28 +230,6 @@ export default function FareRatesPage() {
     () => !!draft && !!saved && JSON.stringify(draft) !== JSON.stringify(saved),
     [draft, saved]
   )
-
-  const invalid = useMemo(() => {
-    if (!draft) return false
-    return (
-      draft.base < 0 ||
-      draft.perKm < 0 ||
-      !Number.isFinite(draft.base) ||
-      !Number.isFinite(draft.perKm) ||
-      draft.bookingFee < 0 ||
-      draft.minFare < 0 ||
-      draft.surgeMultiplier < SURGE_MIN ||
-      draft.surgeMultiplier > SURGE_MAX
-    )
-  }, [draft])
-
-  const quote = useMemo(() => {
-    if (!draft) return null
-    const pickup = LOCATIONS[Number(pickupIdx)]!
-    const dropoff = LOCATIONS[Number(dropoffIdx)]!
-    const km = distanceKm(pickup, dropoff)
-    return { pickup, dropoff, km, result: quoteFare(draft, km) }
-  }, [draft, pickupIdx, dropoffIdx])
 
   const patch = (p: Partial<FareConfig>) =>
     setDraft((prev) => (prev ? { ...prev, ...p } : prev))
@@ -187,25 +273,25 @@ export default function FareRatesPage() {
     )
   }
 
-  const Icon = VEHICLE.icon
-  const sample = quoteFare(draft, VEHICLE.sampleKm)
-
   return (
     <div className="space-y-6">
       <PageHeader
         title="Fare Rates"
-        description="Manage the platform rate card — base fare, per-km rate, fees, and surge."
+        description="Base, distance tiers and the night surcharge. Every trip is billed by the whole kilometre."
         actions={
           <>
             {dirty && (
-              <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Badge
+                variant="outline"
+                className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              >
                 Unsaved changes
               </Badge>
             )}
             <Button variant="outline" onClick={handleReset} disabled={busy || resetting}>
               {resetting ? <Loader2 className="animate-spin" /> : <RotateCcw />} Reset defaults
             </Button>
-            <Button onClick={handleSave} disabled={!dirty || invalid || busy}>
+            <Button onClick={handleSave} disabled={!dirty || busy}>
               {busy ? <Loader2 className="animate-spin" /> : <Save />} Save rates
             </Button>
           </>
@@ -214,98 +300,157 @@ export default function FareRatesPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <Card className="py-4">
-            <CardHeader className="px-4 pb-0">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="size-4.5" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm">{VEHICLE.label}</CardTitle>
-                  <CardDescription className="text-xs">{VEHICLE.sampleNote}</CardDescription>
-                </div>
-              </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Base &amp; distance tiers</CardTitle>
+              <CardDescription>
+                The base fare covers the first distance; the tiers price the rest.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 px-4 pt-4 sm:grid-cols-2">
+            <CardContent className="grid gap-4 sm:grid-cols-2">
               <NumberField
-                id="base"
+                id="base-fare"
                 label="Base fare"
                 prefix="₱"
-                value={draft.base}
-                onChange={(n) => patch({ base: n })}
+                value={draft.baseFare}
+                onChange={(n) => patch({ baseFare: n })}
+                hint={`Covers the first ${draft.baseDistanceKm} km.`}
               />
               <NumberField
-                id="perkm"
-                label="Per kilometer"
-                prefix="₱"
-                value={draft.perKm}
-                onChange={(n) => patch({ perKm: n })}
+                id="base-km"
+                label="Base distance (km)"
+                value={draft.baseDistanceKm}
+                onChange={(n) => patch({ baseDistanceKm: n })}
+                min={1}
               />
-              <div className="rounded-md bg-muted/60 px-2.5 py-2 text-xs sm:col-span-2">
-                <span className="text-muted-foreground">
-                  {VEHICLE.sampleKm} km sample ≈{" "}
-                </span>
-                <span className="font-semibold">{peso(sample.total)}</span>
-              </div>
+              <NumberField
+                id="tier1-rate"
+                label="Tier 1 rate (₱/km)"
+                prefix="₱"
+                value={draft.tier1RatePerKm}
+                onChange={(n) => patch({ tier1RatePerKm: n })}
+                hint={`Charged over ${draft.baseDistanceKm} km, up to ${draft.tier1MaxKm} km.`}
+              />
+              <NumberField
+                id="tier1-max"
+                label="Tier 1 ends at (km)"
+                value={draft.tier1MaxKm}
+                onChange={(n) => patch({ tier1MaxKm: n })}
+                min={1}
+              />
+              <NumberField
+                id="tier2-rate"
+                label="Tier 2 rate (₱/km)"
+                prefix="₱"
+                value={draft.tier2RatePerKm}
+                onChange={(n) => patch({ tier2RatePerKm: n })}
+                hint={`Charged beyond ${draft.tier1MaxKm} km.`}
+              />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Banknote className="size-4.5 text-muted-foreground" /> Global fees & surge
-              </CardTitle>
-              <CardDescription>
-                Applied to every booking on top of the distance fare.
-              </CardDescription>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Moon className="size-4.5 text-muted-foreground" /> Night ride
+                  </CardTitle>
+                  <CardDescription>
+                    Applied automatically between the night hours when enabled.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {draft.nightRideEnabled ? "On" : "Off"}
+                  </span>
+                  <Switch
+                    checked={draft.nightRideEnabled}
+                    onCheckedChange={(nightRideEnabled) => patch({ nightRideEnabled })}
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <NumberField
-                  id="booking-fee"
-                  label="Booking fee (flat per trip)"
-                  prefix="₱"
-                  value={draft.bookingFee}
-                  onChange={(n) => patch({ bookingFee: n })}
-                />
-                <NumberField
-                  id="min-fare"
-                  label="Minimum fare (per trip)"
-                  prefix="₱"
-                  value={draft.minFare}
-                  onChange={(n) => patch({ minFare: n })}
-                  hint="Trips below this amount are topped up."
-                />
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Night starts</Label>
+                  <Select
+                    value={String(draft.nightStartHour)}
+                    onValueChange={(v) => v && patch({ nightStartHour: Number(v) })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HOURS.map((hour) => (
+                        <SelectItem key={hour} value={String(hour)}>
+                          {hourLabel(hour)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Night ends</Label>
+                  <Select
+                    value={String(draft.nightEndHour)}
+                    onValueChange={(v) => v && patch({ nightEndHour: Number(v) })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HOURS.map((hour) => (
+                        <SelectItem key={hour} value={String(hour)}>
+                          {hourLabel(hour)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <Separator />
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="surge" className="inline-flex items-center gap-1.5 text-sm">
-                    <Percent className="size-4 text-muted-foreground" /> Surge multiplier
-                  </Label>
-                  <Badge variant="secondary" className="font-semibold">
-                    {SURGE_LABEL(draft.surgeMultiplier)}
-                  </Badge>
+                <Label className="text-xs text-muted-foreground">Surcharge type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={draft.nightMode === "flat" ? "default" : "outline"}
+                    onClick={() => patch({ nightMode: "flat" })}
+                    className="min-h-11"
+                  >
+                    Flat fee
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={draft.nightMode === "percentage" ? "default" : "outline"}
+                    onClick={() => patch({ nightMode: "percentage" })}
+                    className="min-h-11"
+                  >
+                    Percentage
+                  </Button>
                 </div>
-                <Slider
-                  id="surge"
-                  value={[draft.surgeMultiplier]}
-                  min={SURGE_MIN}
-                  max={SURGE_MAX}
-                  step={SURGE_STEP}
-                  onValueChange={(value) => patch({ surgeMultiplier: Number(value) })}
-                  className="py-2"
-                />
-                <div className="flex justify-between text-[11px] text-muted-foreground">
-                  <span>1.0× standard</span>
-                  <span>2.0× peak</span>
-                  <span>3.0× max</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Surge multiplies the base + distance subtotal. Minimum fare is enforced after surge.
-                </p>
+
+                {draft.nightMode === "flat" ? (
+                  <NumberField
+                    id="night-flat"
+                    label="Flat night fee"
+                    prefix="₱"
+                    value={draft.nightFlatFee}
+                    onChange={(n) => patch({ nightFlatFee: n })}
+                  />
+                ) : (
+                  <NumberField
+                    id="night-percent"
+                    label="Night boost (%)"
+                    value={draft.nightPercent}
+                    onChange={(n) => patch({ nightPercent: n })}
+                    hint="Applies to the daytime total."
+                  />
+                )}
               </div>
             </CardContent>
           </Card>
@@ -313,9 +458,8 @@ export default function FareRatesPage() {
           <div className="flex items-start gap-2 rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
             <CircleAlert className="mt-0.5 size-4 shrink-0" />
             <p>
-              Existing bookings keep the fare recorded at booking time. Rates saved here apply to the
-              fare calculator and all bookings created afterwards — ready to be backed by a real API
-              via <span className="font-medium text-foreground">fareService</span>.
+              Existing bookings keep the fare recorded at booking time. Rates saved
+              here apply to the preview and every booking created afterwards.
             </p>
           </div>
         </div>
@@ -325,107 +469,10 @@ export default function FareRatesPage() {
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="size-4.5 text-primary" /> Fare calculator
             </CardTitle>
-            <CardDescription>Live preview of what passengers pay.</CardDescription>
+            <CardDescription>Day and night, from the live rate card.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <MapPin className="size-3.5 text-emerald-500" /> Pickup
-                </Label>
-                <Select value={pickupIdx} onValueChange={(v) => v && setPickupIdx(v)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCATIONS.map((l, i) => (
-                      <SelectItem key={l.name} value={String(i)}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <ArrowRight className="size-4 text-muted-foreground" />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <MapPin className="size-3.5 text-primary" /> Destination
-                </Label>
-                <Select value={dropoffIdx} onValueChange={(v) => v && setDropoffIdx(v)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCATIONS.map((l, i) => (
-                      <SelectItem key={l.name} value={String(i)} disabled={String(i) === pickupIdx}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {quote && (
-              <>
-                <div className="flex items-center justify-between rounded-md bg-muted/60 px-3 py-2 text-xs">
-                  <span className="text-muted-foreground">Distance</span>
-                  <span className="font-semibold">{quote.km.toFixed(1)} km</span>
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Base fare</span>
-                    <span className="tabular-nums">{pesoPrecise(quote.result.base)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Distance ({quote.km.toFixed(1)} km × {peso(draft.perKm)})
-                    </span>
-                    <span className="tabular-nums">{pesoPrecise(quote.result.distanceCost)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="tabular-nums">{pesoPrecise(quote.result.subtotal)}</span>
-                  </div>
-                  {quote.result.surgeAdjustment !== 0 && (
-                    <div className="flex justify-between text-amber-600 dark:text-amber-400">
-                      <span>Surge ({draft.surgeMultiplier.toFixed(1)}×)</span>
-                      <span className="tabular-nums">
-                        +{pesoPrecise(quote.result.surgeAdjustment)}
-                      </span>
-                    </div>
-                  )}
-                  {quote.result.minimumTopUp > 0 && (
-                    <div className="flex justify-between text-sky-600 dark:text-sky-400">
-                      <span>Minimum fare top-up</span>
-                      <span className="tabular-nums">
-                        +{pesoPrecise(quote.result.minimumTopUp)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Booking fee</span>
-                    <span className="tabular-nums">{pesoPrecise(quote.result.bookingFee)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Total fare</span>
-                    <span className="text-lg font-bold tabular-nums">
-                      {pesoPrecise(quote.result.total)}
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-muted-foreground">
-                  {quote.pickup.name} → {quote.dropoff.name} · {VEHICLE.label}
-                </p>
-              </>
-            )}
+          <CardContent>
+            <TripPreview config={draft} />
           </CardContent>
         </Card>
       </div>

@@ -7,11 +7,18 @@ import { v } from "convex/values"
  */
 
 const DEFAULT_FARE = {
-  base: 40,
-  perKm: 12,
-  bookingFee: 15,
-  minFare: 50,
-  surgeMultiplier: 1,
+  baseFare: 60,
+  baseDistanceKm: 5,
+  tier1RatePerKm: 10,
+  tier1MaxKm: 10,
+  tier2RatePerKm: 20,
+  nightRideEnabled: true,
+  nightStartHour: 22,
+  nightEndHour: 5,
+  timezoneOffsetHours: 8,
+  nightMode: "flat" as const,
+  nightFlatFee: 30,
+  nightPercent: 20,
 }
 
 /** Every booking, newest first — the console table. */
@@ -182,11 +189,18 @@ export const getFareConfig = query({
 
 export const setFareConfig = mutation({
   args: {
-    base: v.number(),
-    perKm: v.number(),
-    bookingFee: v.number(),
-    minFare: v.number(),
-    surgeMultiplier: v.number(),
+    baseFare: v.number(),
+    baseDistanceKm: v.number(),
+    tier1RatePerKm: v.number(),
+    tier1MaxKm: v.number(),
+    tier2RatePerKm: v.number(),
+    nightRideEnabled: v.boolean(),
+    nightStartHour: v.number(),
+    nightEndHour: v.number(),
+    timezoneOffsetHours: v.number(),
+    nightMode: v.union(v.literal("flat"), v.literal("percentage")),
+    nightFlatFee: v.number(),
+    nightPercent: v.number(),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db

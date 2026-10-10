@@ -11,13 +11,12 @@ import { Text } from "@/components/ui/text"
 import { toast } from "@/components/ui/toast"
 import { useBookings } from "@/store/BookingsContext"
 import {
-  pointAlong,
   serviceLabel,
   VEHICLE_LABEL,
   type LatLng,
   type TripStatus,
 } from "@/shared"
-import { isTerminal, markerProgress, riderOrigin } from "@/services/mock/simulation"
+import { isTerminal, riderMarker } from "@/services/mock/simulation"
 import { useThemeColors } from "@/theme"
 import { peso, statusLabel } from "@/utils/format"
 
@@ -51,18 +50,7 @@ export default function RiderTrip() {
 
   const next = NEXT[booking.status]
 
-  let rider: LatLng | null = null
-  if (booking.status === "accepted" || booking.status === "arriving") {
-    rider = pointAlong(
-      [riderOrigin(booking.pickup), booking.pickup],
-      markerProgress(booking, now)
-    )
-  } else if (booking.status === "in_progress") {
-    rider = pointAlong(
-      [booking.pickup, booking.dropoff],
-      markerProgress(booking, now)
-    )
-  }
+  const rider: LatLng | null = riderMarker(booking, now)
 
   return (
     <Screen>

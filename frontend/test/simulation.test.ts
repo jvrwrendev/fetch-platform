@@ -1,91 +1,106 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { Booking, GeoPoint } from "../../shared/src/types.ts"
+import type { Booking, GeoPoint, TripStatus } from "../../shared/src/types.ts"
 import {
-  ACCEPT_AT,
-  ARRIVE_AT,
-  DONE_AT,
-  START_AT,
-  etaSeconds,
+  PICKUP_LEG_MS,
+  TRIP_LEG_MS,
+  etaLabel,
   isTerminal,
   markerProgress,
+  riderMarker,
   riderOrigin,
-  statusAt,
 } from "../src/services/mock/simulation.ts"
 
-const CREATED_AT = Date.UTC(2026, 0, 1, 8, 0, 0)
+const T0 = Date.UTC(2026, 0, 1, 8, 0, 0)
+const iso = (ms: number) => new Date(ms).toISOString()
 
-function makeBooking(createdAt = CREATED_AT): Booking {
-  return { createdAt: new Date(createdAt).toISOString() } as Booking
+const PICKUP: GeoPoint = { name: "Pickup", address: "A", lat: 8.15, lng: 125.13 }
+const DROPOFF: GeoPoint = { name: "Drop-off", address: "B", lat: 7.91, lng: 125.09 }
+
+function booking(overrides: Partial<Booking> = {}): Booking {
+  return {
+    createdAt: iso(T0),
+    pickup: PICKUP,
+    dropoff: DROPOFF,
+    status: "searching" as TripStatus,
+    ...overrides,
+  } as Booking
 }
-
-test("statusAt walks searching -> accepted -> arriving -> in_progress -> completed", () => {
-  assert.equal(statusAt(0), "searching")
-  assert.equal(statusAt(ACCEPT_AT - 1), "searching")
-  assert.equal(statusAt(ACCEPT_AT), "accepted")
-  assert.equal(statusAt(ARRIVE_AT - 1), "accepted")
-  assert.equal(statusAt(ARRIVE_AT), "arriving")
-  assert.equal(statusAt(START_AT - 1), "arriving")
-  assert.equal(statusAt(START_AT), "in_progress")
-  assert.equal(statusAt(DONE_AT - 1), "in_progress")
-  assert.equal(statusAt(DONE_AT), "completed")
-  assert.equal(statusAt(DONE_AT * 10), "completed")
-})
 
 test("isTerminal is true only for completed and cancelled", () => {
   assert.equal(isTerminal("completed"), true)
   assert.equal(isTerminal("cancelled"), true)
-  assert.equal(isTerminal("searching"), false)
-  assert.equal(isTerminal("accepted"), false)
-  assert.equal(isTerminal("arriving"), false)
-  assert.equal(isTerminal("in_progress"), false)
-})
-
-test("etaSeconds counts down to the next waypoint then stops at zero", () => {
-  const booking = makeBooking()
-  assert.equal(etaSeconds(booking, CREATED_AT), 3)
-  assert.equal(etaSeconds(booking, CREATED_AT + 1500), 1)
-  assert.equal(etaSeconds(booking, CREATED_AT + ACCEPT_AT), 7)
-  assert.equal(etaSeconds(booking, CREATED_AT + START_AT), 8)
-  assert.equal(etaSeconds(booking, CREATED_AT + DONE_AT), 0)
-  assert.equal(etaSeconds(booking, CREATED_AT + DONE_AT + 5000), 0)
-})
-
-test("markerProgress is 0 until the rider accepts, then follows the pickup leg", () => {
-  const booking = makeBooking()
-  assert.equal(markerProgress(booking, CREATED_AT), 0)
-  assert.equal(markerProgress(booking, CREATED_AT + ACCEPT_AT - 1), 0)
-  assert.equal(markerProgress(booking, CREATED_AT + ACCEPT_AT), 0)
-  assert.equal(
-    markerProgress(booking, CREATED_AT + (ACCEPT_AT + START_AT) / 2),
-    0.5
-  )
-})
-
-test("markerProgress runs the trip leg after START_AT and clamps at 1", () => {
-  const booking = makeBooking()
-  assert.equal(markerProgress(booking, CREATED_AT + START_AT), 0)
-  assert.equal(
-    markerProgress(booking, CREATED_AT + (START_AT + DONE_AT) / 2),
-    0.5
-  )
-  assert.equal(markerProgress(booking, CREATED_AT + DONE_AT), 1)
-  assert.equal(markerProgress(booking, CREATED_AT + DONE_AT + 5000), 1)
+  for (const open of ["searching", "accepted", "arriving", "in_progress"] as const) {
+    assert.equal(isTerminal(open), false)
+  }
 })
 
 test("riderOrigin offsets the pickup and labels the marker", () => {
-  const pickup: GeoPoint = { name: "A", address: "B", lat: 14.5, lng: 121.0 }
-  const origin = riderOrigin(pickup)
+  const origin = riderOrigin(PICKUP)
   assert.equal(origin.name, "Rider")
   assert.equal(origin.address, "Nearby")
-  assert.equal(origin.lat, 14.5 + 0.012)
-  assert.equal(origin.lng, 121.0 - 0.01)
+  assert.equal(origin.lat, PICKUP.lat + 0.012)
+  assert.equal(origin.lng, PICKUP.lng - 0.01)
 })
 
-test("statusAt and markerProgress agree that the ride is over at DONE_AT", () => {
-  const booking = makeBooking()
-  const completedAt = CREATED_AT + DONE_AT
-  assert.equal(statusAt(DONE_AT), "completed")
-  assert.equal(markerProgress(booking, CREATED_AT + DONE_AT), 1)
+test("the marker does not move while a request is searching", () => {
+  const ride = booking({ status: "searching" })
+  assert.equal(markerProgress(ride, T0), 0)
+  assert.equal(riderMarker(ride, T0), null)
+})
+
+test("accepted eases up the pickup leg from when the rider accepted", () => {
+  const ride = booking({ status: "accepted", acceptedAt: iso(T0) })
+  assert.equal(markerProgress(ride, T0), 0)
+  // Half the pickup leg in, 60% of the way up the leg at most.
+  assert.equal(markerProgress(ride, T0 + PICKUP_LEG_MS / 2), 0.3)
+  assert.equal(markerProgress(ride, T0 + PICKUP_LEG_MS), 0.6)
+  // Past the expected duration it holds, rather than overshooting.
+  assert.equal(markerProgress(ride, T0 + PICKUP_LEG_MS * 5), 0.6)
+})
+
+test("arriving never falls back below the accepted marker", () => {
+  const ride = booking({ status: "arriving", acceptedAt: iso(T0) })
+  assert.equal(markerProgress(ride, T0), 0.6)
+  assert.equal(markerProgress(ride, T0 + PICKUP_LEG_MS), 1)
+})
+
+test("in_progress runs the drop-off leg from when the trip started", () => {
+  const ride = booking({ status: "in_progress", startedAt: iso(T0) })
+  assert.equal(markerProgress(ride, T0), 0)
+  assert.equal(markerProgress(ride, T0 + TRIP_LEG_MS / 2), 0.5)
+  assert.equal(markerProgress(ride, T0 + TRIP_LEG_MS), 1)
+})
+
+test("a completed trip parks the marker at the drop-off", () => {
+  const ride = booking({ status: "completed" })
+  assert.equal(markerProgress(ride, T0), 1)
+  const marker = riderMarker(ride, T0)
+  assert.deepEqual(marker, { lat: DROPOFF.lat, lng: DROPOFF.lng })
+})
+
+test("riderMarker follows the pickup leg, then the trip leg", () => {
+  const near = booking({ status: "accepted", acceptedAt: iso(T0) })
+  const enRoute = booking({ status: "in_progress", startedAt: iso(T0) })
+
+  const atPickup = riderMarker(near, T0 + PICKUP_LEG_MS)
+  assert.ok(atPickup)
+  // 60% of the way from the rider's origin down to the pickup: closer than
+  // the origin, but not there yet.
+  assert.ok(atPickup.lat < riderOrigin(PICKUP).lat)
+  assert.ok(atPickup.lat > PICKUP.lat)
+
+  const midTrip = riderMarker(enRoute, T0 + TRIP_LEG_MS / 2)
+  assert.ok(midTrip)
+  assert.ok(Math.abs(midTrip.lat - (PICKUP.lat + DROPOFF.lat) / 2) < 1e-9)
+})
+
+test("etaLabel speaks to the passenger, one line per status", () => {
+  assert.equal(etaLabel("searching"), "Finding a rider…")
+  assert.equal(etaLabel("accepted"), "Rider accepted your request")
+  assert.equal(etaLabel("arriving"), "Rider is arriving")
+  assert.equal(etaLabel("in_progress"), "On the way to the drop-off")
+  assert.equal(etaLabel("completed"), "Trip completed")
+  assert.equal(etaLabel("cancelled"), "Trip cancelled")
 })

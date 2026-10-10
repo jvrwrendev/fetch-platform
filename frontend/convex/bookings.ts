@@ -2,6 +2,14 @@ import { mutation, query } from "./_generated/server"
 import type { MutationCtx, QueryCtx } from "./_generated/server"
 import { v } from "convex/values"
 
+import {
+  DEFAULT_FARE_CONFIG,
+  distanceKm,
+  estimateErrandFare,
+  estimateFare,
+  type FareConfig,
+} from "../../shared/src/index"
+
 const geoPoint = v.object({
   name: v.string(),
   address: v.string(),
@@ -37,6 +45,16 @@ async function find(ctx: MutationCtx | QueryCtx, id: string) {
     .query("bookings")
     .withIndex("by_app_id", (q) => q.eq("id", id))
     .unique()
+}
+
+/** The live rate card, so a client can never quote its own price. */
+async function getConfig(ctx: MutationCtx | QueryCtx): Promise<FareConfig> {
+  const row = await ctx.db
+    .query("settings")
+    .withIndex("by_key", (q) => q.eq("key", "fareConfig"))
+    .unique()
+  const value = row?.value as FareConfig | undefined
+  return value?.base !== undefined ? value : DEFAULT_FARE_CONFIG
 }
 
 /** Drop a notice into a user's bell. */
@@ -85,15 +103,29 @@ export const listForRider = query({
   },
 })
 
-/** Requests nobody has taken yet — the rider's list. */
+/**
+ * Requests still up for grabs, as a given rider would see them.
+ *
+ * An offline rider gets nothing — they are not accepting work. A request the
+ * rider has already declined is hidden from them alone, so it stays open for
+ * everybody else.
+ */
 export const listOpen = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { riderId: v.string() },
+  handler: async (ctx, { riderId }) => {
+    const rider = await ctx.db
+      .query("users")
+      .withIndex("by_app_id", (q) => q.eq("id", riderId))
+      .unique()
+    if (!rider || rider.online === false) return []
+
     const rows = await ctx.db
       .query("bookings")
       .withIndex("by_status", (q) => q.eq("status", "searching"))
       .collect()
-    return rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    return rows
+      .filter((b) => !(b.declinedBy ?? []).includes(riderId))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   },
 })
 
@@ -103,7 +135,7 @@ export const get = query({
   handler: async (ctx, { id }) => await find(ctx, id),
 })
 
-/** A new request, created by a passenger. */
+/** A new request. The fare is quoted here, not by the client. */
 export const create = mutation({
   args: {
     passengerId: v.string(),
@@ -111,12 +143,15 @@ export const create = mutation({
     bookingType: v.optional(bookingType),
     pickup: geoPoint,
     dropoff: geoPoint,
-    distanceKm: v.number(),
-    fare: v.object({
-      base: v.number(),
-      distance: v.number(),
-      total: v.number(),
-    }),
+    // Advisory only — the server prices the trip from the live rate card.
+    distanceKm: v.optional(v.number()),
+    fare: v.optional(
+      v.object({
+        base: v.number(),
+        distance: v.number(),
+        total: v.number(),
+      })
+    ),
     paymentMethod,
     items: v.optional(v.array(errandItem)),
     itemBudget: v.optional(v.number()),
@@ -125,13 +160,32 @@ export const create = mutation({
     recipientPhone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const { distanceKm: _ignoredKm, fare: _ignoredFare, ...rest } = args
+    const config = await getConfig(ctx)
+    const distance = distanceKm(args.pickup, args.dropoff)
+    const type = args.bookingType ?? "ride"
+    const isErrand = type === "pabili" || type === "padala"
+    const quote = isErrand
+      ? estimateErrandFare(args.pickup, args.dropoff, type)
+      : estimateFare(args.pickup, args.dropoff, config)
+    const fare = isErrand
+      ? {
+          base: (quote as ReturnType<typeof estimateErrandFare>).base +
+            (quote as ReturnType<typeof estimateErrandFare>).stopFee,
+          distance: quote.distanceCost,
+          total: quote.total,
+        }
+      : { base: quote.base, distance: quote.distanceCost, total: quote.total }
+
     const now = Date.now()
     const id = `b${now}`
     const reference = `FT-${String(now).slice(-6)}`
     await ctx.db.insert("bookings", {
-      ...args,
+      ...rest,
       id,
       reference,
+      distanceKm: distance,
+      fare,
       status: "searching",
       createdAt: new Date(now).toISOString(),
     })
@@ -139,7 +193,7 @@ export const create = mutation({
       ctx,
       "admin",
       "New booking request",
-      `${reference} · ${args.bookingType ?? "ride"} from ${args.pickup.name} to ${args.dropoff.name}.`
+      `${reference} · ${type} from ${args.pickup.name} to ${args.dropoff.name}.`
     )
     await notify(
       ctx,
@@ -162,6 +216,7 @@ export const accept = mutation({
       riderId,
       riderName,
       status: "accepted",
+      acceptedAt: new Date().toISOString(),
     })
     await notify(
       ctx,
@@ -174,28 +229,34 @@ export const accept = mutation({
   },
 })
 
-/** The rider turns a request down — it leaves their list, cancelled. */
+/**
+ * The rider turns a request down. It stays open for everyone else — the decline
+ * is remembered against this rider only.
+ */
 export const reject = mutation({
-  args: { id: v.string() },
-  handler: async (ctx, { id }) => {
+  args: { id: v.string(), riderId: v.string() },
+  handler: async (ctx, { id, riderId }) => {
     const booking = await find(ctx, id)
     if (!booking) return null
-    await ctx.db.patch(booking._id, { status: "cancelled" })
+    const declinedBy = Array.from(
+      new Set([...(booking.declinedBy ?? []), riderId])
+    )
+    await ctx.db.patch(booking._id, { declinedBy })
     return id
   },
 })
 
-/** Move a trip along its stages. */
+/** Move a trip along its stages, stamping when each leg begins. */
 export const setStatus = mutation({
   args: { id: v.string(), status: tripStatus },
   handler: async (ctx, { id, status }) => {
     const booking = await find(ctx, id)
     if (!booking) return null
+    const now = new Date().toISOString()
     await ctx.db.patch(booking._id, {
       status,
-      ...(status === "completed"
-        ? { completedAt: new Date().toISOString() }
-        : {}),
+      ...(status === "in_progress" ? { startedAt: now } : {}),
+      ...(status === "completed" ? { completedAt: now } : {}),
     })
     if (status === "in_progress") {
       await notify(

@@ -149,6 +149,12 @@ export interface Booking {
   createdAt: string
   completedAt?: string
   rating?: number
+  /** When a rider accepted the request — the pickup leg's start. */
+  acceptedAt?: string
+  /** When the trip actually started — the drop-off leg's start. */
+  startedAt?: string
+  /** Riders who turned this request down, so it stays open for others. */
+  declinedBy?: string[]
   /** What the passenger asked for. Absent on older rows means a plain ride. */
   bookingType?: BookingType
   /** Pabili/pasugo shopping list. */

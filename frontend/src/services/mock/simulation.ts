@@ -1,18 +1,22 @@
-import type { Booking, GeoPoint, TripStatus } from "@/shared"
+import type { Booking, GeoPoint, LatLng, TripStatus } from "@/shared"
 
 /**
- * Mock ride lifecycle. A booking made in the app is driven by the clock rather
- * than by a second device: the rider "accepts" a couple of seconds after the
- * request, drives to the pickup, runs the trip, and finishes — all from
- * `createdAt`, so every screen showing the same booking agrees without any
- * cross-tab messaging.
+ * Trip progress, derived from the trip's real status.
+ *
+ * The rider advances the trip in their app, so the marker and the ETA follow
+ * the status Convex holds — not a client-side clock. Each leg is eased over an
+ * expected duration from the timestamp the backend stamps when that leg begins,
+ * so the marker moves smoothly without inventing a timeline.
  */
-export const ACCEPT_AT = 2500
-export const ARRIVE_AT = 6000
-export const START_AT = 9000
-export const DONE_AT = 17000
 
-/** Where a simulated rider waits before a trip: a little away from pickup. */
+export const PICKUP_LEG_MS = 150_000
+export const TRIP_LEG_MS = 240_000
+
+export function isTerminal(status: TripStatus): boolean {
+  return status === "completed" || status === "cancelled"
+}
+
+/** Where a rider waits before a trip: a little away from pickup. */
 export function riderOrigin(pickup: GeoPoint): GeoPoint {
   return {
     name: "Rider",
@@ -22,38 +26,66 @@ export function riderOrigin(pickup: GeoPoint): GeoPoint {
   }
 }
 
-export function statusAt(elapsed: number): TripStatus {
-  if (elapsed >= DONE_AT) return "completed"
-  if (elapsed >= START_AT) return "in_progress"
-  if (elapsed >= ARRIVE_AT) return "arriving"
-  if (elapsed >= ACCEPT_AT) return "accepted"
-  return "searching"
+function elapsedMs(since: string | undefined, now: number): number {
+  if (!since) return 0
+  const start = +new Date(since)
+  return Number.isFinite(start) ? Math.max(0, now - start) : 0
 }
 
-export function isTerminal(status: TripStatus) {
-  return status === "completed" || status === "cancelled"
+function clamp01(value: number): number {
+  return Math.min(Math.max(value, 0), 1)
 }
 
-/**
- * How far the rider marker is along its current leg, 0..1. Before pickup it
- * approaches the pickup point; once the trip starts it runs to the drop-off.
- */
+function lerp(a: LatLng, b: LatLng, t: number): LatLng {
+  return {
+    lat: a.lat + (b.lat - a.lat) * t,
+    lng: a.lng + (b.lng - a.lng) * t,
+  }
+}
+
+/** Marker progress (0..1) along the current leg, from the trip's status. */
 export function markerProgress(booking: Booking, now: number): number {
-  const elapsed = now - new Date(booking.createdAt).getTime()
-  if (elapsed >= START_AT) {
-    return Math.min(Math.max((elapsed - START_AT) / (DONE_AT - START_AT), 0), 1)
+  switch (booking.status) {
+    case "accepted":
+      return clamp01(elapsedMs(booking.acceptedAt, now) / PICKUP_LEG_MS) * 0.6
+    case "arriving":
+      // The rider has declared they are close; never less than 60% up the leg.
+      return 0.6 + clamp01(elapsedMs(booking.acceptedAt, now) / PICKUP_LEG_MS) * 0.4
+    case "in_progress":
+      return clamp01(elapsedMs(booking.startedAt, now) / TRIP_LEG_MS)
+    case "completed":
+      return 1
+    default:
+      return 0
   }
-  if (elapsed >= ACCEPT_AT) {
-    return Math.min(Math.max((elapsed - ACCEPT_AT) / (START_AT - ACCEPT_AT), 0), 1)
-  }
-  return 0
 }
 
-/** Seconds until the rider reaches the next waypoint. */
-export function etaSeconds(booking: Booking, now: number): number {
-  const elapsed = now - new Date(booking.createdAt).getTime()
-  if (elapsed >= DONE_AT) return 0
-  if (elapsed >= START_AT) return Math.ceil((DONE_AT - elapsed) / 1000)
-  if (elapsed >= ACCEPT_AT) return Math.ceil((START_AT - elapsed) / 1000)
-  return Math.ceil((ACCEPT_AT - elapsed) / 1000)
+/** Where the rider marker sits: first to the pickup, then to the drop-off. */
+export function riderMarker(booking: Booking, now: number): LatLng | null {
+  const t = markerProgress(booking, now)
+  if (booking.status === "accepted" || booking.status === "arriving") {
+    return lerp(riderOrigin(booking.pickup), booking.pickup, t)
+  }
+  if (booking.status === "in_progress" || booking.status === "completed") {
+    return lerp(booking.pickup, booking.dropoff, t)
+  }
+  return null
+}
+
+/** One line of status copy, for the tracking screen. */
+export function etaLabel(status: TripStatus): string {
+  switch (status) {
+    case "searching":
+      return "Finding a rider…"
+    case "accepted":
+      return "Rider accepted your request"
+    case "arriving":
+      return "Rider is arriving"
+    case "in_progress":
+      return "On the way to the drop-off"
+    case "completed":
+      return "Trip completed"
+    case "cancelled":
+      return "Trip cancelled"
+  }
 }

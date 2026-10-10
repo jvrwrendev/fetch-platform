@@ -16,10 +16,13 @@ import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
 import { useSettings, type SavedPlace } from "@/store/SettingsContext"
 import { useRoute } from "@/hooks/useRoute"
+import { api } from "@convex/_generated/api"
+import { useQuery } from "convex/react"
 import {
   BOOKING_TYPE_CTA,
   BOOKING_TYPE_DESCRIPTION,
   BOOKING_TYPE_TITLE,
+  DEFAULT_FARE_CONFIG,
   LOCATIONS,
   PAYMENT_METHODS,
   estimateErrandFare,
@@ -30,6 +33,7 @@ import {
   type BookingErrandItem,
   type BookingType,
   type ErrandType,
+  type FareConfig,
   type GeoPoint,
   type PaymentMethod,
 } from "@/shared"
@@ -82,6 +86,10 @@ export default function BookRide() {
   const [notes, setNotes] = useState("")
   const colors = useThemeColors()
 
+  // Quote from the live rate card the admin edits, not a client default.
+  const fetchedFareConfig = useQuery(api.admin.getFareConfig)
+  const fareConfig = (fetchedFareConfig as FareConfig | undefined) ?? DEFAULT_FARE_CONFIG
+
   const paymentMethod = paymentOverride ?? settings.defaultPaymentMethod
   const outsidePickup = Boolean(pickup && !isInServiceArea(pickup))
   const outsideDropoff = Boolean(dropoff && !isInServiceArea(dropoff))
@@ -89,8 +97,8 @@ export default function BookRide() {
   const steps = STEPS_BY_TYPE[bookingType]
 
   const estimate = useMemo(
-    () => (pickup && dropoff ? estimateFare(pickup, dropoff) : null),
-    [pickup, dropoff]
+    () => (pickup && dropoff ? estimateFare(pickup, dropoff, fareConfig) : null),
+    [pickup, dropoff, fareConfig]
   )
   const errand = useMemo(
     () =>

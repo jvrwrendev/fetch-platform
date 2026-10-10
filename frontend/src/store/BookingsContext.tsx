@@ -27,7 +27,7 @@ interface BookingsContextValue {
   loading: boolean
   createBooking: (input: NewBookingInput) => Promise<Booking>
   acceptBooking: (id: string, riderId: string, riderName: string) => void
-  rejectBooking: (id: string) => void
+  rejectBooking: (id: string, riderId: string) => void
   setStatus: (id: string, status: TripStatus) => void
   cancelBooking: (id: string) => void
   rateBooking: (id: string, rating: number) => void
@@ -57,7 +57,10 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
     api.bookings.listForRider,
     isRider && user ? { riderId: user.id } : "skip"
   )
-  const openRows = useQuery(api.bookings.listOpen, isRider ? {} : "skip")
+  const openRows = useQuery(
+    api.bookings.listOpen,
+    isRider && user ? { riderId: user.id } : "skip"
+  )
 
   const create = useMutation(api.bookings.create)
   const accept = useMutation(api.bookings.accept)
@@ -104,8 +107,6 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
         bookingType: input.bookingType,
         pickup: input.pickup,
         dropoff: input.dropoff,
-        distanceKm: input.distanceKm,
-        fare: input.fare,
         paymentMethod: input.paymentMethod ?? "cash",
         items: input.items,
         itemBudget: input.itemBudget,
@@ -127,8 +128,8 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
   )
 
   const rejectBooking = useCallback(
-    (id: string) => {
-      void reject({ id })
+    (id: string, riderId: string) => {
+      void reject({ id, riderId })
     },
     [reject]
   )

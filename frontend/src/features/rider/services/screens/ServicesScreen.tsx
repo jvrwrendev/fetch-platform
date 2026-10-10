@@ -21,6 +21,22 @@ export default function RiderRequests() {
     .filter((booking) => booking.status === "searching")
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
+  const online = Boolean(user?.online)
+
+  if (!online) {
+    return (
+      <Screen header>
+        <PageHeader title="Available bookings" />
+        <View className="items-center gap-2 rounded-xl border border-border bg-card p-8">
+          <Text className="text-center text-sm font-medium">You are offline</Text>
+          <Text className="text-center text-sm text-muted-foreground">
+            Go online from the dashboard or settings to see requests.
+          </Text>
+        </View>
+      </Screen>
+    )
+  }
+
   return (
     <Screen header>
       <PageHeader
@@ -82,8 +98,8 @@ export default function RiderRequests() {
                 <Button
                   variant="outline"
                   onPress={() => {
-                    rejectBooking(booking.id)
-                    toast("Booking rejected")
+                    rejectBooking(booking.id, user!.id)
+                    toast("Booking declined")
                   }}
                 >
                   Reject

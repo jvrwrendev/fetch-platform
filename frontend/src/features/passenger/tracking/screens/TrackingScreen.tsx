@@ -19,10 +19,9 @@ import {
   type TripStatus,
 } from "@/shared"
 import {
-  etaSeconds,
   isTerminal,
-  markerProgress,
-  riderOrigin,
+  etaLabel,
+  riderMarker,
 } from "@/services/mock/simulation"
 import { useThemeColors } from "@/theme"
 import { dateTime, peso, statusLabel } from "@/utils/format"
@@ -69,7 +68,6 @@ export default function TripStatusScreen() {
 
   const active = !isTerminal(booking.status)
   const stepIndex = STEPS.indexOf(booking.status)
-  const eta = etaSeconds(booking, now)
   const service = serviceLabel(booking.bookingType, "commuter")
   const title =
     booking.bookingType === "pabili"
@@ -78,29 +76,8 @@ export default function TripStatusScreen() {
         ? "Your pasugo"
         : "Your ride"
 
-  let rider: LatLng | null = null
-  if (booking.status === "accepted" || booking.status === "arriving") {
-    rider = pointAlong(
-      [riderOrigin(booking.pickup), booking.pickup],
-      markerProgress(booking, now)
-    )
-  } else if (booking.status === "in_progress") {
-    rider = pointAlong(
-      [booking.pickup, booking.dropoff],
-      markerProgress(booking, now)
-    )
-  }
-
-  const etaText =
-    booking.status === "searching"
-      ? "Finding a rider…"
-      : booking.status === "arriving"
-        ? `Rider arriving in ~${eta}s`
-        : booking.status === "in_progress"
-          ? `Arriving at drop-off in ~${eta}s`
-          : booking.status === "accepted"
-            ? "Rider accepted your request"
-            : statusLabel(booking.status)
+  const rider: LatLng | null = riderMarker(booking, now)
+  const etaText = etaLabel(booking.status)
 
   return (
     <Screen>

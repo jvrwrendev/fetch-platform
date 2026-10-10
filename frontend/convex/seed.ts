@@ -72,6 +72,7 @@ const USERS = [
     totalTrips: 312,
     vehicleModel: "Honda Click 160",
     plateNumber: "ABC 1234",
+    online: true,
   },
 ]
 
@@ -266,6 +267,36 @@ async function seed(ctx: MutationCtx) {
       await ctx.db.insert("notifications", {
         id: `n${index + 1}`,
         ...notification,
+      })
+    }
+    // Platform notices for the admin console's bell.
+    const adminNotices = [
+      {
+        title: "New rider application",
+        message: "A rider submitted documents for verification.",
+        kind: "system" as const,
+        severity: "warning" as const,
+      },
+      {
+        title: "Two requests waiting",
+        message: "There are unclaimed ride requests in Malaybalay.",
+        kind: "booking" as const,
+        severity: "info" as const,
+      },
+      {
+        title: "Fare rate card",
+        message: "The current base fare is ₱40 and ₱12/km.",
+        kind: "system" as const,
+        severity: "info" as const,
+      },
+    ]
+    for (const [index, notice] of adminNotices.entries()) {
+      await ctx.db.insert("notifications", {
+        id: `admin-n${index + 1}`,
+        userId: "admin",
+        read: index === 2,
+        createdAt: new Date(Date.now() - index * 3_600_000).toISOString(),
+        ...notice,
       })
     }
   }

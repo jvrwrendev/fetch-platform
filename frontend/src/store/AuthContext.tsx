@@ -34,6 +34,7 @@ const FIELDS = [
   "totalTrips",
   "vehicleModel",
   "plateNumber",
+  "online",
 ] as const
 
 /** Trim a Convex user row down to the domain `User`. */
@@ -101,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: patch.phone,
         vehicleModel: patch.vehicleModel,
         plateNumber: patch.plateNumber,
+        online: patch.online,
       })
     },
     [patchUser, user]

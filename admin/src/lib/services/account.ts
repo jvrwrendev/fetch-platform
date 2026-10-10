@@ -1,10 +1,11 @@
 import type { AdminProfile, AdminSettings, AppNotification } from "@/lib/types"
+import { api } from "@convex/_generated/api"
+import { convex } from "@/lib/convex"
 import {
   ADMIN_CREDENTIALS,
   ADMIN_PROFILE,
   ADMIN_SETTINGS,
 } from "@/data/mock/admin"
-import { NOTIFICATIONS } from "@/data/mock/generate"
 import { delay } from "./client"
 
 export const authService = {
@@ -19,25 +20,28 @@ export const authService = {
 
 export const notificationService = {
   async list(): Promise<AppNotification[]> {
-    return delay(NOTIFICATIONS)
+    let rows = (await convex.query(api.notifications.listMine, {
+      userId: "admin",
+    })) as AppNotification[]
+    if (rows.length === 0) {
+      await convex.mutation(api.notifications.seedAdmin, {})
+      rows = (await convex.query(api.notifications.listMine, {
+        userId: "admin",
+      })) as AppNotification[]
+    }
+    return rows
   },
 
-  async markRead(id: string): Promise<AppNotification> {
-    const target = NOTIFICATIONS.find((n) => n.id === id)
-    if (!target) return Promise.reject(new Error("Notification not found"))
-    target.read = true
-    return delay(target, 80)
+  async markRead(id: string): Promise<void> {
+    await convex.mutation(api.notifications.markRead, { id })
   },
 
-  async markAllRead(): Promise<AppNotification[]> {
-    for (const n of NOTIFICATIONS) n.read = true
-    return delay(NOTIFICATIONS, 100)
+  async markAllRead(): Promise<void> {
+    await convex.mutation(api.notifications.markAllRead, { userId: "admin" })
   },
 
   async remove(id: string): Promise<void> {
-    const index = NOTIFICATIONS.findIndex((n) => n.id === id)
-    if (index >= 0) NOTIFICATIONS.splice(index, 1)
-    return delay(undefined, 80)
+    await convex.mutation(api.notifications.remove, { id })
   },
 }
 

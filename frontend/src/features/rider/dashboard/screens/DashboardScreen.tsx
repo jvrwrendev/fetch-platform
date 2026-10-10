@@ -11,15 +11,13 @@ import { Switch } from "@/components/ui/switch"
 import BookingCard from "@/components/BookingCard"
 import { useAuth } from "@/store/AuthContext"
 import { useBookings } from "@/store/BookingsContext"
-import { useSettings } from "@/store/SettingsContext"
 import { useThemeColors } from "@/theme"
 import { peso } from "@/utils/format"
 
 export default function RiderDashboard() {
-  const { user } = useAuth()
+  const { user, updateProfile } = useAuth()
   const { bookings } = useBookings()
   const router = useRouter()
-  const { settings, update } = useSettings()
   const colors = useThemeColors()
 
   const mine = bookings.filter((booking) => booking.riderId === user?.id)
@@ -41,11 +39,11 @@ export default function RiderDashboard() {
         action={
           <View className="flex-row items-center gap-2">
             <Text className="text-sm font-medium">
-              {settings.available ? "Online" : "Offline"}
+              {user?.online ? "Online" : "Offline"}
             </Text>
             <Switch
-              value={settings.available}
-              onValueChange={(available) => update({ available })}
+              value={Boolean(user?.online)}
+              onValueChange={(online) => updateProfile({ online })}
             />
           </View>
         }

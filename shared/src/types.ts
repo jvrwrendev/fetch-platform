@@ -63,6 +63,8 @@ export interface User {
   totalTrips: number
   vehicleModel?: string
   plateNumber?: string
+  /** Rider online/offline, persisted on the account. */
+  online?: boolean
 }
 
 export interface Passenger {

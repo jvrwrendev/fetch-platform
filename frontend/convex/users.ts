@@ -27,6 +27,7 @@ export const update = mutation({
     phone: v.optional(v.string()),
     vehicleModel: v.optional(v.string()),
     plateNumber: v.optional(v.string()),
+    online: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -44,6 +45,7 @@ export const update = mutation({
       ...(args.plateNumber !== undefined
         ? { plateNumber: args.plateNumber }
         : {}),
+      ...(args.online !== undefined ? { online: args.online } : {}),
     })
     return args.id
   },

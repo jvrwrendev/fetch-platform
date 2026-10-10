@@ -51,6 +51,7 @@ export default defineSchema({
     totalTrips: v.number(),
     vehicleModel: v.optional(v.string()),
     plateNumber: v.optional(v.string()),
+    online: v.optional(v.boolean()),
   })
     .index("by_app_id", ["id"])
     .index("by_role", ["role"]),

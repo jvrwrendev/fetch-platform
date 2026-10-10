@@ -26,6 +26,8 @@ export default function RiderSettings() {
   const [plate, setPlate] = useState(user?.plateNumber ?? "")
   const colors = useThemeColors()
 
+  const online = Boolean(user?.online)
+
   useEffect(() => {
     setModel(user?.vehicleModel ?? "")
     setPlate(user?.plateNumber ?? "")
@@ -57,22 +59,18 @@ export default function RiderSettings() {
         </CardHeader>
         <CardContent>
           <Row
-            label={settings.available ? "Online" : "Offline"}
+            label={online ? "Online" : "Offline"}
             description={
-              settings.available
+              online
                 ? "You are receiving ride requests."
                 : "You will not receive requests while offline."
             }
           >
             <Switch
-              value={settings.available}
-              onValueChange={(available) => {
-                update({ available })
-                toast(
-                  available
-                    ? "You are online"
-                    : "You are offline"
-                )
+              value={online}
+              onValueChange={(next) => {
+                updateProfile({ online: next })
+                toast(next ? "You are online" : "You are offline")
               }}
             />
           </Row>

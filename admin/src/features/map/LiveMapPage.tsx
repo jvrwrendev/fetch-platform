@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { UserCell } from "@/components/shared/UserCell"
 import { MapView } from "./MapView"
-import { RIDERS } from "@/data/mock/generate"
+import { riderService } from "@/lib/services"
 import type { Rider, RiderAvailability } from "@/lib/types"
 import { formatNumber } from "@/lib/format"
 
@@ -34,17 +34,28 @@ const AVAILABILITY_COLOR: Record<RiderAvailability, string> = {
   offline: "#94a3b8",
 }
 
-function seedLiveRiders(): LiveRider[] {
-  return RIDERS.map((r) => ({ ...r, lat: r.location.lat, lng: r.location.lng }))
+function toLive(rows: Rider[]): LiveRider[] {
+  return rows.map((r) => ({ ...r, lat: r.location.lat, lng: r.location.lng }))
 }
 
 export default function LiveMapPage() {
-  const [riders, setRiders] = useState<LiveRider[]>(() => seedLiveRiders())
+  const [riders, setRiders] = useState<LiveRider[]>([])
   const [filter, setFilter] = useState<RiderAvailability | "all">("all")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lastSync, setLastSync] = useState(() => new Date())
   const [simulating, setSimulating] = useState(true)
   const tickRef = useRef(0)
+  /** The positions the map starts from, so Reset is not a trip to the mock. */
+  const baseRef = useRef<LiveRider[]>([])
+
+  // Real riders from the deployment; their positions drift in between reads.
+  useEffect(() => {
+    riderService.listAll().then((rows) => {
+      const live = toLive(rows)
+      baseRef.current = live
+      setRiders(live)
+    })
+  }, [])
 
   useEffect(() => {
     if (!simulating) return
@@ -113,7 +124,7 @@ export default function LiveMapPage() {
 
   const handleReset = () => {
     tickRef.current = 0
-    setRiders(seedLiveRiders())
+    setRiders(baseRef.current.map((r) => ({ ...r })))
     setLastSync(new Date())
   }
 
@@ -121,7 +132,7 @@ export default function LiveMapPage() {
     <div className="space-y-6">
       <PageHeader
         title="Live Rider Map"
-        description="Simulated rider telemetry over OpenStreetMap — positions drift every few seconds."
+        description="Rider telemetry from the live deployment — positions drift between reads."
         actions={
           <>
             <Button variant="outline" onClick={handleReset}>

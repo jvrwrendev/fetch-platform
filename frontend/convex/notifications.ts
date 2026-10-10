@@ -51,6 +51,19 @@ export const markRead = mutation({
   },
 })
 
+export const remove = mutation({
+  args: { id: v.string() },
+  handler: async (ctx, { id }) => {
+    const row = await ctx.db
+      .query("notifications")
+      .withIndex("by_app_id", (q) => q.eq("id", id))
+      .unique()
+    if (!row) return null
+    await ctx.db.delete(row._id)
+    return id
+  },
+})
+
 /** Used when a trip changes so the other side gets a notice. */
 export const push = mutation({
   args: {
@@ -78,5 +91,48 @@ export const push = mutation({
       createdAt: new Date(now).toISOString(),
     })
     return now
+  },
+})
+
+/** Idempotently gives the console's bell a starting set of platform notices. */
+export const seedAdmin = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const existing = await ctx.db
+      .query("notifications")
+      .withIndex("by_user", (q) => q.eq("userId", "admin"))
+      .take(1)
+    if (existing.length > 0) return "ok"
+
+    const notices = [
+      {
+        title: "New rider application",
+        message: "A rider submitted documents for verification.",
+        kind: "system" as const,
+        severity: "warning" as const,
+      },
+      {
+        title: "Requests waiting",
+        message: "There are unclaimed ride requests in Malaybalay.",
+        kind: "booking" as const,
+        severity: "info" as const,
+      },
+      {
+        title: "Fare rate card",
+        message: "Base fare ₱40 · ₱12/km.",
+        kind: "system" as const,
+        severity: "info" as const,
+      },
+    ]
+    for (const [index, notice] of notices.entries()) {
+      await ctx.db.insert("notifications", {
+        id: `admin-n${index + 1}`,
+        userId: "admin",
+        read: false,
+        createdAt: new Date(Date.now() - index * 3_600_000).toISOString(),
+        ...notice,
+      })
+    }
+    return "seeded"
   },
 })

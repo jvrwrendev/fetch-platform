@@ -24,6 +24,11 @@ async function allRiders(): Promise<Rider[]> {
 }
 
 export const riderService = {
+  /** Every rider, for the live map. */
+  async listAll(): Promise<Rider[]> {
+    return allRiders()
+  },
+
   async list(query: RiderQuery): Promise<Paginated<Rider>> {
     let rows = [...(await allRiders())]
     const search = query.search?.trim().toLowerCase()

@@ -39,6 +39,28 @@ async function find(ctx: MutationCtx | QueryCtx, id: string) {
     .unique()
 }
 
+/** Drop a notice into a user's bell. */
+async function notify(
+  ctx: MutationCtx,
+  userId: string,
+  title: string,
+  message: string,
+  severity: "info" | "success" | "warning" | "danger" = "info",
+  kind: "system" | "booking" = "booking"
+) {
+  const now = Date.now()
+  await ctx.db.insert("notifications", {
+    id: `n${now}-${Math.random().toString(36).slice(2, 7)}`,
+    userId,
+    title,
+    message,
+    kind,
+    severity,
+    read: false,
+    createdAt: new Date(now).toISOString(),
+  })
+}
+
 /** A passenger's trips, newest first. */
 export const listForPassenger = query({
   args: { passengerId: v.string() },
@@ -105,13 +127,27 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const now = Date.now()
     const id = `b${now}`
+    const reference = `FT-${String(now).slice(-6)}`
     await ctx.db.insert("bookings", {
       ...args,
       id,
-      reference: `FT-${String(now).slice(-6)}`,
+      reference,
       status: "searching",
       createdAt: new Date(now).toISOString(),
     })
+    await notify(
+      ctx,
+      "admin",
+      "New booking request",
+      `${reference} · ${args.bookingType ?? "ride"} from ${args.pickup.name} to ${args.dropoff.name}.`
+    )
+    await notify(
+      ctx,
+      args.passengerId,
+      "Request received",
+      `Looking for a rider for ${reference}.`,
+      "info"
+    )
     return await find(ctx, id)
   },
 })
@@ -127,6 +163,13 @@ export const accept = mutation({
       riderName,
       status: "accepted",
     })
+    await notify(
+      ctx,
+      booking.passengerId,
+      "Rider assigned",
+      `${riderName} accepted ${booking.reference} and is on the way.`,
+      "success"
+    )
     return id
   },
 })
@@ -154,6 +197,23 @@ export const setStatus = mutation({
         ? { completedAt: new Date().toISOString() }
         : {}),
     })
+    if (status === "in_progress") {
+      await notify(
+        ctx,
+        booking.passengerId,
+        "Trip started",
+        `You are on your way in ${booking.reference}.`
+      )
+    }
+    if (status === "completed") {
+      await notify(
+        ctx,
+        booking.passengerId,
+        "Trip completed",
+        `${booking.reference} is complete. Thanks for riding FETCH.`,
+        "success"
+      )
+    }
     return id
   },
 })
